@@ -4,11 +4,13 @@ An independent AI agent service for the Everlight platform.
 
 ## Overview
 
-This service handles all AI agent functionality including:
+This service handles AI agent functionality including:
 - Agent message processing
 - Tool execution
 - Agent subscriptions and channels
 - Communication between agents
+
+This service works in conjunction with the everlight-api service which handles CRUD operations and integrations.
 
 ## Setup
 
@@ -35,4 +37,4 @@ uvicorn main:app --host 0.0.0.0 --port 8001 --reload
 
 ## Architecture
 
-The service is designed to be independent but communicates with the main Everlight backend through HTTP APIs and shares the same database.
+The service is designed to be independent but communicates with the everlight-api service for CRUD operations and shares the same database for agent-specific data.
