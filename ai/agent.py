@@ -40,6 +40,11 @@ class RawEntrySearchInput(BaseModel):
     limit: int = 10
     source_filter: Optional[str] = None
 
+class ScheduleMessageInput(BaseModel):
+    channel: str
+    message: str
+    run_at: datetime
+
 @cache
 def get_user_ai_base(user_id: UUID, agent_name: str):
     ai = Genkit(
@@ -65,7 +70,7 @@ def get_user_ai_base(user_id: UUID, agent_name: str):
         if slate:
             return slate.content
         else:
-            return {"message": "The slate is currently empty."}
+            return "The slate is currently empty."
 
     @ai.tool()
     def update_slate(update_slate_input: UpdateSlateInput) -> str:
@@ -240,5 +245,20 @@ def get_user_ai_base(user_id: UUID, agent_name: str):
             )
         
         return "\n".join(formatted_results)
+
+    # Scheduling tools
+    @ai.tool()
+    async def schedule_message(schedule_message_input: ScheduleMessageInput) -> str:
+        """
+        Schedule a message to be sent at a specific time using Google Cloud Tasks.
+        Use this to schedule future communications with other agents or channels.
+        """
+        return send_message(
+            user_id,
+            schedule_message_input.channel,
+            schedule_message_input.message,
+            agent_name,
+            schedule_message_input.run_at
+        )
 
     return ai

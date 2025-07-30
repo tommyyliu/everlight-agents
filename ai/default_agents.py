@@ -32,7 +32,15 @@ def create_default_agents_for_user(db: Session, user: User):
     """
     print(f"Creating default agents for user {user.email} ({user.id})")
 
-    common_tools = ["send_message_tool", "create_note", "search_notes", "get_note_titles", "search_raw_entries", "get_recent_raw_entries"]
+    common_tools = [
+        "send_message_tool", 
+        "create_note", 
+        "search_notes", 
+        "get_note_titles", 
+        "search_raw_entries", 
+        "get_recent_raw_entries",
+        "schedule_message"
+    ]
 
     # 1. Define and create Eforos, the Information Guardian
     eforos_agent = Agent(

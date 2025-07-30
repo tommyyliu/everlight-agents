@@ -1,5 +1,3 @@
-import asyncio
-import os
 from uuid import UUID
 
 from db.models import Message
@@ -7,7 +5,7 @@ from db.session import get_db_session
 from ai.integrations.messaging import send_agent_message_notification
 
 
-async def send_message(user_id: UUID, channel: str, message: str, sender: str):
+def send_message(user_id: UUID, channel: str, message: str, sender: str, schedule_time):
     """
     Send a message to a channel.
     This function persists the message to the database and enqueues a task to notify agents.
@@ -27,7 +25,7 @@ async def send_message(user_id: UUID, channel: str, message: str, sender: str):
         db.commit()
         
         # Enqueue task to notify agents via Cloud Tasks
-        await send_agent_message_notification(user_id, channel, message, sender)
+        send_agent_message_notification(user_id, channel, message, sender, schedule_time)
         
         return {"status": "message_sent"}
     except Exception as e:
@@ -36,10 +34,3 @@ async def send_message(user_id: UUID, channel: str, message: str, sender: str):
         return {"status": "error", "message": str(e)}
     finally:
         db.close()
-
-
-def send_message_sync(user_id: UUID, channel: str, message: str, sender: str):
-    """
-    Synchronous wrapper for send_message for backward compatibility.
-    """
-    return asyncio.run(send_message(user_id, channel, message, sender))
