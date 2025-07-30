@@ -54,6 +54,7 @@ google-api-core==2.25.1
     #   google-cloud-core
     #   google-cloud-resource-manager
     #   google-cloud-storage
+    #   google-cloud-tasks
 google-auth==2.40.3
     # via
     #   google-api-core
@@ -62,6 +63,7 @@ google-auth==2.40.3
     #   google-cloud-core
     #   google-cloud-resource-manager
     #   google-cloud-storage
+    #   google-cloud-tasks
     #   google-genai
 google-cloud-aiplatform==1.105.0
     # via genkit-plugin-google-genai
@@ -75,6 +77,8 @@ google-cloud-resource-manager==1.14.2
     # via google-cloud-aiplatform
 google-cloud-storage==2.19.0
     # via google-cloud-aiplatform
+google-cloud-tasks==2.19.3
+    # via everlight-agents (pyproject.toml)
 google-crc32c==1.7.1
     # via
     #   google-cloud-storage
@@ -94,7 +98,9 @@ googleapis-common-protos==1.70.0
     #   grpc-google-iam-v1
     #   grpcio-status
 grpc-google-iam-v1==0.14.2
-    # via google-cloud-resource-manager
+    # via
+    #   google-cloud-resource-manager
+    #   google-cloud-tasks
 grpcio==1.74.0
     # via
     #   google-api-core
@@ -164,11 +170,13 @@ proto-plus==1.26.1
     #   google-api-core
     #   google-cloud-aiplatform
     #   google-cloud-resource-manager
+    #   google-cloud-tasks
 protobuf==6.31.1
     # via
     #   google-api-core
     #   google-cloud-aiplatform
     #   google-cloud-resource-manager
+    #   google-cloud-tasks
     #   googleapis-common-protos
     #   grpc-google-iam-v1
     #   grpcio-status

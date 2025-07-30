@@ -88,11 +88,13 @@ async def new_message(
 
     if not agents:
         print("No agents found.")
-        return []
+        return {"message": "No agents subscribed to this channel."}
 
     print(f"Found {len(agents)} agents.")
     print(f"Message: {message_notification.message}")
-    # Process the message for each ai
+    
+    # Process the message for each agent
+    processed_agents = 0
     for agent in agents:
         if agent.name == message_notification.sender:
             continue
@@ -104,8 +106,9 @@ async def new_message(
             user,
             agent
         )
+        processed_agents += 1
 
-    return {"message": f"Message accepted. Processing for {len(agents)} ai(s) has been initiated."}
+    return {"message": f"Message accepted. Processing for {processed_agents} agent(s) has been initiated."}
 
 
 @app.get("/health")
