@@ -5,7 +5,7 @@ from db.session import get_db_session
 from ai.integrations.messaging import send_agent_message_notification
 
 
-def send_message(user_id: UUID, channel: str, message: str, sender: str, schedule_time):
+def send_message(user_id: UUID, channel: str, message: str, sender: str, schedule_time = None):
     """
     Send a message to a channel.
     This function persists the message to the database and enqueues a task to notify agents.

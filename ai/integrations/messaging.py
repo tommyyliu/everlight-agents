@@ -10,7 +10,7 @@ from google.cloud import tasks_v2
 from datetime import datetime
 
 
-def send_agent_message_notification(user_id: UUID, channel: str, message: str, sender: str, schedule_time: datetime = None):
+def send_agent_message_notification(user_id: UUID, channel: str, message: str, sender: str, schedule_time: datetime):
     """
     Enqueue a task to send a message notification to the agent service.
     

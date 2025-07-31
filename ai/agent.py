@@ -27,6 +27,7 @@ class UpdateSlateInput(BaseModel):
 
 class CreateNoteInput(BaseModel):
     """Input model for creating a summary."""
+    title: str
     content: str
 
 class NoteSearchInput(BaseModel):
@@ -56,7 +57,7 @@ def get_user_ai_base(user_id: UUID, agent_name: str):
         """
         Send a message to a channel.
         """
-        send_message(user_id, send_message_input.channel, send_message_input.message, agent_name)
+        send_message(user_id, send_message_input.channel, send_message_input.message, agent_name, None)
         return "Message sent."
 
 
@@ -119,7 +120,7 @@ def get_user_ai_base(user_id: UUID, agent_name: str):
         note = Note(
             user_id=user_id,
             owner=agent.id,  # Use the actual agent ID as owner
-            title="Auto-generated Note",
+            title=create_note_input.title,
             content=create_note_input.content,
             embedding=embedding
         )
