@@ -59,6 +59,7 @@ be too beholden to the notes. Your purpose is to best serve the user's needs.
 
 ## 9. Output Format
 Please use html for your slate content. The browser app expects html. It will be attached using dangerouslySetInnerHTML.
+You don't need to output a whole webpage just a component.
 
 ## 10. Scenarios & Examples
 
