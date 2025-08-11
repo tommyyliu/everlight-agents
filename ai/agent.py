@@ -1,6 +1,8 @@
 from datetime import datetime
 from functools import cache
 from uuid import UUID
+import os
+import json
 
 from genkit.ai import Genkit
 from genkit.plugins.google_genai import GoogleAI
@@ -47,16 +49,43 @@ class ScheduleMessageInput(BaseModel):
     run_at: datetime
 
 @cache
-def get_user_ai_base(user_id: UUID, agent_name: str):
+def get_user_ai_base(user_id: UUID, agent_name: str, model: Optional[str] = None):
+    selected_model = model or os.getenv("GENKIT_MODEL", "googleai/gemini-2.5-flash")
     ai = Genkit(
         plugins=[GoogleAI()],
-        model='googleai/gemini-2.5-flash',
+        model=selected_model,
     )
+    def _to_dict(obj):
+        try:
+            return obj.model_dump()
+        except Exception:
+            try:
+                return obj.dict()
+            except Exception:
+                return obj
+    def _log_tool_call(name: str, args):
+        path = os.getenv("EVAL_TOOL_LOG_PATH")
+        if not path:
+            return
+        try:
+            entry = {
+                "timestamp": datetime.now().isoformat(),
+                "user_id": str(user_id),
+                "agent_name": agent_name,
+                "tool": name,
+                "args": args,
+                "step": os.getenv("EVAL_STEP_INDEX"),
+            }
+            with open(path, "a") as f:
+                f.write(json.dumps(entry) + "\n")
+        except Exception:
+            pass
     @ai.tool()
     def send_message_tool(send_message_input: SendMessageInput) -> str:
         """
         Send a message to a channel.
         """
+        _log_tool_call("send_message_tool", _to_dict(send_message_input))
         send_message(user_id, send_message_input.channel, send_message_input.message, agent_name, None)
         return "Message sent."
 
@@ -64,6 +93,7 @@ def get_user_ai_base(user_id: UUID, agent_name: str):
     @ai.tool()
     def read_slate() -> str:
         """Reads the current content of the user's Living Slate."""
+        _log_tool_call("read_slate", {})
         db = next(get_db_session())
         # Assuming one slate per user, get the most recently updated one.
         stmt = select(Slate).where(Slate.user_id == user_id).order_by(Slate.updated_at.desc())
@@ -76,6 +106,7 @@ def get_user_ai_base(user_id: UUID, agent_name: str):
     @ai.tool()
     def update_slate(update_slate_input: UpdateSlateInput) -> str:
         """Updates the user's Living Slate with new, structured content."""
+        _log_tool_call("update_slate", _to_dict(update_slate_input))
         db = next(get_db_session())
         # Find the user's slate or create a new one.
         stmt = select(Slate).where(Slate.user_id == user_id)
@@ -90,14 +121,12 @@ def get_user_ai_base(user_id: UUID, agent_name: str):
 
     @ai.tool()
     def get_current_time() -> str:
-        # IMPROVEMENT: Return a standardized string format for the AI.
-        # TODO: Think about getting latest user timezone.
+        _log_tool_call("get_current_time", {})
         return datetime.now().isoformat()
 
     @ai.tool()
     def get_hourly_weather() -> str:
-        # TODO: Get user location and get weather for that location.
-        # Can use weatherkit once I get on that Apple developer program.
+        _log_tool_call("get_hourly_weather", {})
         return "Sunny and 72 degrees. This is just example weather data by the way. Actual weather API integration will come in the future."
 
     @ai.tool()
@@ -106,9 +135,9 @@ def get_user_ai_base(user_id: UUID, agent_name: str):
         Create and store a structured summary with semantic embedding.
         Use this to store organized, processed information that can be retrieved later.
         """
+        _log_tool_call("create_note", _to_dict(create_note_input))
         db = next(get_db_session())
         
-        # Get the agent ID for this agent
         agent = db.query(Agent).filter(Agent.user_id == user_id, Agent.name == agent_name).first()
         if not agent:
             return f"Error: Agent {agent_name} not found for user"
@@ -135,9 +164,9 @@ def get_user_ai_base(user_id: UUID, agent_name: str):
         Search existing summaries using semantic similarity.
         Returns the most relevant summaries based on the query.
         """
+        _log_tool_call("search_notes", _to_dict(note_search_input))
         db = next(get_db_session())
         
-        # Generate embedding for the search query
         query_vector = embed_query(note_search_input.query)
 
         stmt = select(Note).where(Note.user_id == user_id).order_by(
@@ -160,6 +189,7 @@ def get_user_ai_base(user_id: UUID, agent_name: str):
         Retrieve all notes for organizational overview.
         Use this to understand the current knowledge structure.
         """
+        _log_tool_call("get_note_titles", {})
         db = next(get_db_session())
         notes = db.query(Note).filter(Note.user_id == user_id).order_by(Note.created_at.desc()).all()
         
@@ -178,9 +208,9 @@ def get_user_ai_base(user_id: UUID, agent_name: str):
         Search past raw entries using semantic similarity.
         Use this to find relevant historical data that might provide context for current processing.
         """
+        _log_tool_call("search_raw_entries", _to_dict(raw_entry_search_input))
         db = next(get_db_session())
         
-        # Generate embedding for the search query
         query_vector = embed_query(raw_entry_search_input.query)
 
         # Build query with optional source filter
@@ -221,6 +251,7 @@ def get_user_ai_base(user_id: UUID, agent_name: str):
         Get recent raw entries for context.
         Use this to understand recent user activity and data patterns.
         """
+        _log_tool_call("get_recent_raw_entries", {"limit": limit})
         db = next(get_db_session())
         
         stmt = select(RawEntry).where(RawEntry.user_id == user_id).order_by(
@@ -254,6 +285,7 @@ def get_user_ai_base(user_id: UUID, agent_name: str):
         Schedule a message to be sent at a specific time using Google Cloud Tasks.
         Use this to schedule future communications with other agents or channels.
         """
+        _log_tool_call("schedule_message", _to_dict(schedule_message_input))
         return send_message(
             user_id,
             schedule_message_input.channel,

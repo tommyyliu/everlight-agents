@@ -58,6 +58,8 @@ async def process_agent_message(
     """
     agent_prompt = agent.prompt.format(
         # Place any information in here that can be used to augment the ai's understanding of the situation.
+        user_info=user_info,
+        message_info=message_info,
     )
 
     augmented_prompt = f"""

@@ -1,0 +1,42 @@
+[
+  {
+    "name": "email_gemini_flash_default_prompt",
+    "model": "googleai/gemini-2.5-flash",
+    "message": "From: [email protected] To: [email protected] Subject: Trip Details\n\nHey! Flight is booked for Oct 3 at 9:30am out of SFO. Hotel: The Grove, confirmation #ABC123. Let's plan dinners too.",
+    "channel": "raw_data_entries",
+    "prompt_path": "ai/default_prompts/eforos.md"
+  },
+  {
+    "name": "calendar_event_gemini_flash_default_prompt",
+    "model": "googleai/gemini-2.5-flash",
+    "message": "Event: Design Review\nDate: 2025-08-15\nTime: 2:30 PM\nLocation: Zoom\nNotes: Review v2 mocks and assign action items.",
+    "channel": "raw_data_entries",
+    "prompt_path": "ai/default_prompts/eforos.md"
+  },
+  {
+    "name": "journal_entry_gemini_flash_default_prompt",
+    "model": "googleai/gemini-2.5-flash",
+    "message": "Had a tough morning but afternoon picked up. Finished quarterly report. Need to follow up with Sam about the API outage.",
+    "channel": "raw_data_entries",
+    "prompt_path": "ai/default_prompts/eforos.md"
+  },
+  {
+    "name": "threads_with_noise_gemini_flash",
+    "model": "googleai/gemini-2.5-flash",
+    "channel": "raw_data_entries",
+    "prompt_path": "ai/default_prompts/eforos.md",
+    "messages_sequence": [
+      "Slack: Sam — API outage root cause likely cache stampede; action: add request coalescing",
+      "SMS: Mom — Flight lands Fri 9:10pm, can you pick me up?",
+      "Notion: Project Omega — Draft proposal ready for feedback by Wed",
+      "Calendar: 1:1 with Alex moved to Thu 11am",
+      "Noise: Random ad — win a free cruise now!!!",
+      "Email: Re: Omega — Feedback: clarify success metrics and risks",
+      "Journal: Felt distracted; workout helped refocus; remember to hydrate",
+      "Noise: Lorem ipsum dolor sit amet, consectetur adipiscing elit",
+      "Todo: Buy gift for Nina’s birthday (July 28)",
+      "Slack: Design — v2 mocks ready for review next Tuesday",
+      "Email: Travel — Hotel rebooked, new conf. #XYZ789; flight unchanged"
+    ]
+  }
+]

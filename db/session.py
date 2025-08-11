@@ -14,22 +14,30 @@ if not DATABASE_URL:
         "Please ensure it is defined in a .env file in the project root."
     )
 
-connection_arguments = {
-    "prepare_threshold": None
-}
 
-engine = create_engine(
-    DATABASE_URL,
-    connect_args=connection_arguments,
-    poolclass=NullPool
-)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-@event.listens_for(engine, "connect")
-def connect(dbapi_connection, connection_record):
-    register_vector(dbapi_connection)
 
 def get_db_session():
+    db_url = os.getenv("DATABASE_URL")
+    if not db_url:
+        raise ValueError(
+            "The DATABASE_URL environment variable is not set. "
+            "Please ensure it is defined in a .env file in the project root."
+        )
+
+    if os.getenv("TESTING"):
+        db_url = db_url.replace("postgresql://", "postgresql+psycopg://")
+
+    engine = create_engine(
+        db_url,
+        connect_args={"prepare_threshold": None},
+        poolclass=NullPool
+    )
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+    @event.listens_for(engine, "connect")
+    def connect(dbapi_connection, connection_record):
+        register_vector(dbapi_connection)
+
     db = SessionLocal()
     try:
         yield db
