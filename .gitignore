@@ -39,3 +39,11 @@ venv.bak/
 # OS
 .DS_Store
 Thumbs.db
+
+# Crush
+.crush/
+
+# Evals output
+/evals/out/
+
+everlight_agents.egg-info
