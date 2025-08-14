@@ -32,6 +32,12 @@ class CreateNoteInput(BaseModel):
     title: str
     content: str
 
+class UpdateNoteInput(BaseModel):
+    """Input for updating an existing note by ID. Title is optional to update."""
+    note_id: str
+    content: str
+    title: Optional[str] = None
+
 class NoteSearchInput(BaseModel):
     """Input model for searching summaries."""
     query: str
@@ -80,12 +86,16 @@ def get_user_ai_base(user_id: UUID, agent_name: str, model: Optional[str] = None
                 f.write(json.dumps(entry) + "\n")
         except Exception:
             pass
+
     @ai.tool()
     def send_message_tool(send_message_input: SendMessageInput) -> str:
         """
         Send a message to a channel.
         """
         _log_tool_call("send_message_tool", _to_dict(send_message_input))
+        # In testing/eval mode, avoid external network calls to Cloud Tasks
+        if os.getenv("TESTING"):
+            return "Message recorded (test mode; not sent to external queue)."
         send_message(user_id, send_message_input.channel, send_message_input.message, agent_name, None)
         return "Message sent."
 
@@ -157,6 +167,34 @@ def get_user_ai_base(user_id: UUID, agent_name: str, model: Optional[str] = None
         db.add(note)
         db.commit()
         return f"Note created successfully with ID: {note.id}"
+
+    @ai.tool()
+    def update_note(update_note_input: UpdateNoteInput) -> str:
+        """
+        Update an existing note's content (and optionally title) by note ID.
+        Re-embeds the content to keep semantic search accurate.
+        """
+        _log_tool_call("update_note", _to_dict(update_note_input))
+        db = next(get_db_session())
+        
+        from uuid import UUID as _UUID
+        try:
+            note_uuid = _UUID(str(update_note_input.note_id))
+        except Exception:
+            return f"Error: note_id '{update_note_input.note_id}' is not a valid UUID"
+        note = db.query(Note).filter(Note.user_id == user_id, Note.id == note_uuid).first()
+        if not note:
+            return f"Error: Note {update_note_input.note_id} not found for user"
+        
+        note.content = update_note_input.content
+        if update_note_input.title is not None:
+            note.title = update_note_input.title
+        
+        # regenerate embedding for updated content
+        note.embedding = embed_document(update_note_input.content)
+        
+        db.commit()
+        return f"Note {note.id} updated successfully."
 
     @ai.tool()
     def search_notes(note_search_input: NoteSearchInput) -> str:

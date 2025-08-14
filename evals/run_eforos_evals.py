@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -45,6 +46,7 @@ def create_user_and_agent(db: Session, prompt: str) -> tuple[User, Agent]:
     common_tools = [
         "send_message_tool",
         "create_note",
+        "update_note",
         "search_notes",
         "get_note_titles",
         "search_raw_entries",
@@ -84,8 +86,8 @@ def build_augmented_prompt(agent_prompt: str, user_email: str, channel: str, mes
 
 
 async def run_scenario(db: Session, scenario: dict[str, Any]) -> dict[str, Any]:
-    prompt_path = scenario.get("prompt_path")
-    prompt_text = read_text_file(prompt_path) if prompt_path else "You are Eforos."
+    # Load prompt by name/path/default
+    prompt_key, prompt_text = get_prompt_text(scenario)
 
     user, agent = create_user_and_agent(db, prompt_text)
 
@@ -93,20 +95,70 @@ async def run_scenario(db: Session, scenario: dict[str, Any]) -> dict[str, Any]:
     from ai.agent import get_user_ai_base
     ai = get_user_ai_base(user.id, agent.name, model=model)
 
+    # Prepare a simple per-step message log in the output directory to verify processing coverage
+    name = scenario.get("name") or f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    # Run dir includes prompt key
+    run_dir = OUT_DIR / name / prompt_key
+    run_dir.mkdir(parents=True, exist_ok=True)
+    step_log_path = run_dir / "steps.ndjson"
+    def _log_step(step: str, message: str):
+        try:
+            with step_log_path.open("a") as f:
+                f.write(json.dumps({
+                    "timestamp": datetime.now().isoformat(),
+                    "step": step,
+                    "message": message,
+                }) + "\n")
+        except Exception:
+            pass
+
     messages_sequence = scenario.get("messages_sequence")
     if messages_sequence:
+        history: list[str] = []
         for idx, msg in enumerate(messages_sequence):
             os.environ["EVAL_STEP_INDEX"] = str(idx)
+            history.append(str(msg))
+            _log_step(str(idx), msg)
             augmented_prompt = build_augmented_prompt(
                 agent_prompt=agent.prompt,
                 user_email=user.email,
                 channel=scenario.get("channel", "raw_data_entries"),
                 message=msg,
             )
-            try:
-                await ai.generate(prompt=augmented_prompt, tools=agent.tools)
-            except Exception:
-                pass
+            # Retry with simple exponential backoff to handle transient Genkit/HTTP errors or rate limits
+            last_exc = None
+            max_attempts = int(os.getenv("EVAL_MAX_ATTEMPTS", "3"))
+            base_delay = float(os.getenv("EVAL_BASE_DELAY_SEC", "0.5"))
+            for attempt in range(max_attempts):
+                try:
+                    await ai.generate(prompt=augmented_prompt, tools=agent.tools)
+                    last_exc = None
+                    break
+                except Exception as e:
+                    last_exc = e
+                    _log_step(str(idx), f"ERROR attempt {attempt+1}/{max_attempts}: {type(e).__name__}: {e}")
+                    import traceback as _tb
+                    cause = getattr(e, "__cause__", None)
+                    context = getattr(e, "__context__", None)
+                    with (run_dir / "errors.ndjson").open("a") as ef:
+                        ef.write(json.dumps({
+                            "timestamp": datetime.now().isoformat(),
+                            "step": str(idx),
+                            "attempt": attempt+1,
+                            "error": str(e),
+                            "type": type(e).__name__,
+                            "cause": repr(cause) if cause else None,
+                            "context": repr(context) if context else None,
+                            "model": model,
+                            "traceback": _tb.format_exc(),
+                        }) + "\n")
+                    # Backoff before retrying
+                    await asyncio.sleep(base_delay * (2 ** attempt))
+            if last_exc is not None:
+                # Give up on this step after retries
+                _log_step(str(idx), "FAILED after retries")
+            # Optional pacing to reduce chance of rate limiting
+            await asyncio.sleep(float(os.getenv("EVAL_STEP_DELAY_SEC", str(base_delay))))
     else:
         augmented_prompt = build_augmented_prompt(
             agent_prompt=agent.prompt,
@@ -114,10 +166,20 @@ async def run_scenario(db: Session, scenario: dict[str, Any]) -> dict[str, Any]:
             channel=scenario.get("channel", "raw_data_entries"),
             message=scenario.get("message", ""),
         )
+        _log_step("single", augmented_prompt)
         try:
             await ai.generate(prompt=augmented_prompt, tools=agent.tools)
-        except Exception:
-            pass
+        except Exception as e:
+            # Log exception details by step
+            err = {
+                "timestamp": datetime.now().isoformat(),
+                "step": os.getenv("EVAL_STEP_INDEX"),
+                "error": str(e),
+                "type": type(e).__name__,
+            }
+            with (run_dir / "errors.ndjson").open("a") as ef:
+                ef.write(json.dumps(err) + "\n")
+
 
     notes = db.query(Note).filter(Note.user_id == user.id, Note.owner == agent.id).order_by(Note.created_at.asc()).all()
     notes_dump = [
@@ -139,15 +201,38 @@ async def run_scenario(db: Session, scenario: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def save_result(name: str, result: dict[str, Any]) -> None:
-    run_dir = OUT_DIR / name
+def get_prompt_text(scenario: dict[str, Any]) -> tuple[str, str]:
+    # priority: scenario.prompt_name -> scenario.prompt_path -> default
+    prompt_name = scenario.get("prompt_name")
+    prompt_path = scenario.get("prompt_path")
+    if prompt_name:
+        # map to evals/prompts/<prompt_name>.md
+        path = OUT_DIR.parent / "prompts" / f"{prompt_name}.md"
+        if path.exists():
+            return prompt_name, path.read_text()
+        else:
+            # fallback to ai/default_prompts
+            fallback = Path("ai/default_prompts") / f"{prompt_name}.md"
+            if fallback.exists():
+                return prompt_name, fallback.read_text()
+    if prompt_path:
+        return Path(prompt_path).stem, read_text_file(prompt_path)
+    # default minimal prompt
+    return "initial_test_eforos", read_text_file("evals/prompts/initial_test_eforos.md")
+
+
+def save_result(name: str, prompt_key: str, result: dict[str, Any]) -> None:
+    # Organize as out/<scenario_name>/<prompt_key>/
+    run_dir = OUT_DIR / name / prompt_key
     run_dir.mkdir(parents=True, exist_ok=True)
 
     with (run_dir / "config.json").open("w") as f:
         json.dump({"scenario": result["scenario"], "timestamp": result["timestamp"]}, f, indent=2)
 
-    with (run_dir / "prompt.txt").open("w") as f:
-        f.write(result["augmented_prompt"])
+    # Save prompt only for single-message scenarios
+    if result.get("augmented_prompt") is not None:
+        with (run_dir / "prompt.txt").open("w") as f:
+            f.write(result["augmented_prompt"])
 
     with (run_dir / "notes.json").open("w") as f:
         json.dump(result["notes"], f, indent=2)
@@ -155,13 +240,42 @@ def save_result(name: str, result: dict[str, Any]) -> None:
     # Copy tool call log if present
     log_path = os.getenv("EVAL_TOOL_LOG_PATH")
     if log_path and Path(log_path).exists():
-        with open(log_path, "r") as lf, (run_dir / "tool_calls.ndjson").open("w") as out:
-            out.write(lf.read())
+        src = Path(log_path)
+        dst = run_dir / "tool_calls.ndjson"
+        if src.resolve() != dst.resolve():
+            dst.write_text(src.read_text())
+        else:
+            # already at destination, do nothing
+            pass
+        # Clean up tmp tool log if it has our tmp prefix
+        if src.name.startswith("tmp_rovodev_") and src.exists():
+            try:
+                src.unlink()
+            except Exception:
+                pass
 
 
 def main() -> None:
     ensure_out_dir()
+
+    selected_name = os.getenv("EVAL_SCENARIO")
+    if len(sys.argv) > 1:
+        # allow commands: list, or scenario name
+        if sys.argv[1] in {"-l", "--list", "list"}:
+            scenarios = load_scenarios()
+            print("Available scenarios:")
+            for sc in scenarios:
+                print(f"- {sc.get('name')}")
+            return
+        else:
+            selected_name = sys.argv[1]
+
     scenarios = load_scenarios()
+    if selected_name:
+        scenarios = [s for s in scenarios if s.get("name") == selected_name]
+        if not scenarios:
+            print(f"No scenario found with name '{selected_name}'. Use --list to see options.")
+            return
 
     with testing.postgresql.Postgresql() as postgresql:
         url = postgresql.url()
@@ -184,17 +298,18 @@ def main() -> None:
         try:
             for scenario in scenarios:
                 name = scenario.get("name") or f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-                # Set per-run tool log file
-                tool_log = OUT_DIR / name / "tool_calls.ndjson"
+                # Set per-run tool log file under <scenario>/<prompt>
+                prompt_key, _ = get_prompt_text(scenario)
+                tool_log = OUT_DIR / name / prompt_key / "tool_calls.ndjson"
                 os.environ["EVAL_TOOL_LOG_PATH"] = str(tool_log)
-                # Ensure parent dir exists for the log
-                (OUT_DIR / name).mkdir(parents=True, exist_ok=True)
+                # Ensure parent dirs exist for the log
+                (OUT_DIR / name / prompt_key).mkdir(parents=True, exist_ok=True)
                 # Clear any existing log file
                 if tool_log.exists():
                     tool_log.unlink()
 
                 result = asyncio.run(run_scenario(db, scenario))
-                save_result(name, result)
+                save_result(name, prompt_key, result)
         finally:
             db.close()
 

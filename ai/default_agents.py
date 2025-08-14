@@ -35,6 +35,7 @@ def create_default_agents_for_user(db: Session, user: User):
     common_tools = [
         "send_message_tool", 
         "create_note", 
+        "update_note",
         "search_notes", 
         "get_note_titles", 
         "search_raw_entries", 
