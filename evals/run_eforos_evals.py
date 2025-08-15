@@ -13,6 +13,8 @@ from pgvector.psycopg import register_vector
 from sqlalchemy import create_engine, text, event
 from sqlalchemy.orm import Session, sessionmaker
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from db.models import User, Agent, AgentSubscription, Note, Base
 
 load_dotenv()
