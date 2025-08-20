@@ -26,7 +26,9 @@ Configure scenarios
 
 Run
 - From repo root:
-  - python evals/run_eforos_evals.py
+  - python evals/run_eforos_evals.py list
+  - python evals/run_eforos_evals.py run --name <scenario_name>
+  - python evals/run_eforos_evals.py run --model googleai/gemini-2.5-flash --prompt eforos_v1
 
 Notes
 - The runner creates a new user and an Eforos agent per scenario

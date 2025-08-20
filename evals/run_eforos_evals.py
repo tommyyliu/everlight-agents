@@ -5,6 +5,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+import click
 from uuid import uuid4
 
 import testing.postgresql
@@ -12,14 +13,15 @@ from dotenv import load_dotenv
 from pgvector.psycopg import register_vector
 from sqlalchemy import create_engine, text, event
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import NullPool
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from db.models import User, Agent, AgentSubscription, Note, Base
 
-load_dotenv()
-
 BASE_DIR = Path(__file__).resolve().parent
+# Load .env from everlight-agents root to pick up API keys
+load_dotenv(BASE_DIR.parent / ".env")
 OUT_DIR = BASE_DIR / "out"
 
 
@@ -28,9 +30,47 @@ def ensure_out_dir() -> None:
 
 
 def load_scenarios() -> list[dict[str, Any]]:
+    """Load scenarios from the legacy JSON file and from scenarios/*.json files.
+
+    Returns a flat list of scenario dicts. Each JSON file can be either a dict (single scenario)
+    or a list of dicts (multiple scenarios). Later entries with the same name override earlier ones.
+    """
+    scenarios: list[dict[str, Any]] = []
+
+    # 1) Load the legacy consolidated file if present
     scenarios_path = BASE_DIR / "eforos_scenarios.json"
-    with scenarios_path.open("r") as f:
-        return json.load(f)
+    if scenarios_path.exists():
+        try:
+            data = json.loads(scenarios_path.read_text())
+            if isinstance(data, list):
+                scenarios.extend([s for s in data if isinstance(s, dict)])
+            elif isinstance(data, dict):
+                scenarios.append(data)
+        except Exception:
+            # Best-effort: ignore malformed file
+            pass
+
+    # 2) Load individual scenario JSONs from scenarios/
+    scenarios_dir = BASE_DIR / "scenarios"
+    if scenarios_dir.exists():
+        for p in sorted(scenarios_dir.glob("*.json")):
+            try:
+                data = json.loads(p.read_text())
+                if isinstance(data, list):
+                    scenarios.extend([s for s in data if isinstance(s, dict)])
+                elif isinstance(data, dict):
+                    scenarios.append(data)
+            except Exception:
+                # Skip malformed files but continue
+                continue
+
+    # 3) De-duplicate by name, last one wins
+    seen: dict[str, dict[str, Any]] = {}
+    for sc in scenarios:
+        name = sc.get("name") or f"scenario_{len(seen)+1}"
+        seen[name] = sc
+
+    return list(seen.values())
 
 
 def read_text_file(path: str) -> str:
@@ -74,17 +114,16 @@ def create_user_and_agent(db: Session, prompt: str) -> tuple[User, Agent]:
 
 def build_augmented_prompt(agent_prompt: str, user_email: str, channel: str, message: str) -> str:
     user_info = (
-        f"\n    Your user is {user_email}. The current time is {datetime.now()}.\n"
-        f"    Currently, we're just testing the code to give you tool calling functionality.\n"
-        f"    Try to just do everything that you think you need to do. Then, just log it all into a note, so that we can inspect\n"
-        f"    how you're doing.\n"
+        f"\nYour user is {user_email}. The current time is {datetime.now().isoformat()}.\n"
+        f"You have tool-calling enabled. Do what you need to, then persist a clear note we can audit.\n"
     )
     message_info = (
-        f"\n    On channel {channel},\n"
-        f"    An ai or process has sent a message: {message}.\n"
-        f"    The sender is eval_runner.\n"
+        f"\nChannel: {channel}\n"
+        f"Incoming message: {message}\n"
+        f"Sender: eval_runner\n"
     )
-    return f"\n    {agent_prompt}\n    {user_info}\n    {message_info}\n    "
+    return f"{agent_prompt}\n{user_info}{message_info}"
+
 
 
 async def run_scenario(db: Session, scenario: dict[str, Any]) -> dict[str, Any]:
@@ -116,10 +155,8 @@ async def run_scenario(db: Session, scenario: dict[str, Any]) -> dict[str, Any]:
 
     messages_sequence = scenario.get("messages_sequence")
     if messages_sequence:
-        history: list[str] = []
         for idx, msg in enumerate(messages_sequence):
             os.environ["EVAL_STEP_INDEX"] = str(idx)
-            history.append(str(msg))
             _log_step(str(idx), msg)
             augmented_prompt = build_augmented_prompt(
                 agent_prompt=agent.prompt,
@@ -133,9 +170,13 @@ async def run_scenario(db: Session, scenario: dict[str, Any]) -> dict[str, Any]:
             base_delay = float(os.getenv("EVAL_BASE_DELAY_SEC", "0.5"))
             for attempt in range(max_attempts):
                 try:
-                    await ai.generate(prompt=augmented_prompt, tools=agent.tools)
-                    last_exc = None
-                    break
+                   if os.getenv("EVAL_DRY_RUN") == "1":
+                       _log_step(str(idx), "DRY RUN: skipped model call")
+                       last_exc = None
+                       break
+                   await ai.generate(prompt=augmented_prompt, tools=agent.tools)
+                   last_exc = None
+                   break
                 except Exception as e:
                     last_exc = e
                     _log_step(str(idx), f"ERROR attempt {attempt+1}/{max_attempts}: {type(e).__name__}: {e}")
@@ -170,7 +211,10 @@ async def run_scenario(db: Session, scenario: dict[str, Any]) -> dict[str, Any]:
         )
         _log_step("single", augmented_prompt)
         try:
-            await ai.generate(prompt=augmented_prompt, tools=agent.tools)
+            if os.getenv("EVAL_DRY_RUN") == "1":
+                _log_step("single", "DRY RUN: skipped model call")
+            else:
+                await ai.generate(prompt=augmented_prompt, tools=agent.tools)
         except Exception as e:
             # Log exception details by step
             err = {
@@ -257,34 +301,75 @@ def save_result(name: str, prompt_key: str, result: dict[str, Any]) -> None:
                 pass
 
 
-def main() -> None:
+@click.group()
+def cli() -> None:
+    """Eforos evals CLI"""
+    pass
+
+
+@cli.command(name="list")
+def list_cmd() -> None:
+    """List available scenarios."""
+    ensure_out_dir()
+    scenarios = load_scenarios()
+    click.echo("Available scenarios:")
+    for sc in scenarios:
+        click.echo(f"- {sc.get('name')}")
+
+
+@cli.command(name="run")
+@click.option("--name", "selected_name", help="Run only this scenario by name.")
+@click.option("--model", default=None, help="Override model id for the run (fallback to GENKIT_MODEL).")
+@click.option("--prompt", "prompt_name", default=None, help="Override prompt name (maps to evals/prompts/<name>.md or ai/default_prompts/<name>.md).")
+@click.option("--step-delay", type=float, default=None, help="Override per-step delay seconds (EVAL_STEP_DELAY_SEC).")
+@click.option("--max-attempts", type=int, default=None, help="Override max attempts per step (EVAL_MAX_ATTEMPTS).")
+@click.option("--base-delay", type=float, default=None, help="Override base delay for backoff (EVAL_BASE_DELAY_SEC).")
+@click.option("--timeout", "gen_timeout", type=float, default=None, help="Per-generate timeout seconds (EVAL_GENERATE_TIMEOUT_SEC).")
+@click.option("--dry-run", is_flag=True, default=False, help="Do not call the model; only write prompts/logs.")
+def run_cmd(selected_name: str | None, model: str | None, prompt_name: str | None, step_delay: float | None, max_attempts: int | None, base_delay: float | None, gen_timeout: float | None, dry_run: bool) -> None:
+    """Run scenarios. By default, runs all discovered scenarios."""
     ensure_out_dir()
 
-    selected_name = os.getenv("EVAL_SCENARIO")
-    if len(sys.argv) > 1:
-        # allow commands: list, or scenario name
-        if sys.argv[1] in {"-l", "--list", "list"}:
-            scenarios = load_scenarios()
-            print("Available scenarios:")
-            for sc in scenarios:
-                print(f"- {sc.get('name')}")
-            return
-        else:
-            selected_name = sys.argv[1]
+    # Environment overrides for runtime behavior
+    if model:
+        os.environ["GENKIT_MODEL"] = model
+    if step_delay is not None:
+        os.environ["EVAL_STEP_DELAY_SEC"] = str(step_delay)
+    if max_attempts is not None:
+        os.environ["EVAL_MAX_ATTEMPTS"] = str(max_attempts)
+    if base_delay is not None:
+        os.environ["EVAL_BASE_DELAY_SEC"] = str(base_delay)
+    if gen_timeout is not None:
+        os.environ["EVAL_GENERATE_TIMEOUT_SEC"] = str(gen_timeout)
+    if dry_run:
+        os.environ["EVAL_DRY_RUN"] = "1"
 
     scenarios = load_scenarios()
+
+    # Optional prompt override: apply to each scenario
+    if prompt_name:
+        for sc in scenarios:
+            sc["prompt_name"] = prompt_name
+
+    # Filter by name if provided (fallback to env var EVAL_SCENARIO for backward compatibility)
+    selected_name = selected_name or os.getenv("EVAL_SCENARIO")
     if selected_name:
         scenarios = [s for s in scenarios if s.get("name") == selected_name]
         if not scenarios:
-            print(f"No scenario found with name '{selected_name}'. Use --list to see options.")
-            return
+            click.echo(f"No scenario found with name '{selected_name}'.", err=True)
+            raise SystemExit(1)
 
     with testing.postgresql.Postgresql() as postgresql:
         url = postgresql.url()
         os.environ["TESTING"] = "1"
         os.environ["DATABASE_URL"] = url
 
-        engine = create_engine(url.replace("postgresql://", "postgresql+psycopg://"))
+        # Use NullPool to avoid pool cleanup rollback calls during ephemeral DB shutdown
+        engine = create_engine(
+            url.replace("postgresql://", "postgresql+psycopg://"),
+            poolclass=NullPool,
+            pool_reset_on_return=None,
+        )
         with engine.connect() as conn:
             conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
             conn.commit()
@@ -297,24 +382,21 @@ def main() -> None:
 
         SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
         db = SessionLocal()
-        try:
-            for scenario in scenarios:
-                name = scenario.get("name") or f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-                # Set per-run tool log file under <scenario>/<prompt>
-                prompt_key, _ = get_prompt_text(scenario)
-                tool_log = OUT_DIR / name / prompt_key / "tool_calls.ndjson"
-                os.environ["EVAL_TOOL_LOG_PATH"] = str(tool_log)
-                # Ensure parent dirs exist for the log
-                (OUT_DIR / name / prompt_key).mkdir(parents=True, exist_ok=True)
-                # Clear any existing log file
-                if tool_log.exists():
-                    tool_log.unlink()
+        for scenario in scenarios:
+            name = scenario.get("name") or f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            # Set per-run tool log file under <scenario>/<prompt>
+            prompt_key, _ = get_prompt_text(scenario)
+            tool_log = OUT_DIR / name / prompt_key / "tool_calls.ndjson"
+            os.environ["EVAL_TOOL_LOG_PATH"] = str(tool_log)
+            # Ensure parent dirs exist for the log
+            (OUT_DIR / name / prompt_key).mkdir(parents=True, exist_ok=True)
+            # Clear any existing log file
+            if tool_log.exists():
+                tool_log.unlink()
 
-                result = asyncio.run(run_scenario(db, scenario))
-                save_result(name, prompt_key, result)
-        finally:
-            db.close()
+            result = asyncio.run(run_scenario(db, scenario))
+            save_result(name, prompt_key, result)
 
 
 if __name__ == "__main__":
-    main()
+    cli()
