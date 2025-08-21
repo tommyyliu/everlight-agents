@@ -5,18 +5,27 @@ description = "Independent AI Agent Service for Everlight"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi[standard]>=0.115.12",
-    "genkit>=0.4.0",
-    "genkit-plugin-google-genai>=0.4.0",
-    "google-genai>=1.23.0",
+    "google-genai>=1.31.0",
     "pgvector>=0.4.1",
     "psycopg[binary,pool]>=3.2.9",
-    "sqlalchemy>=2.0.41",
+    "sqlalchemy>=2.0.43",
     "httpx>=0.27.0",
     "python-dotenv>=1.0.0",
     "google-cloud-tasks>=2.19.3",
+    "click>=8.2.1",
+    "pydantic-ai>=0.7.4",
+    "logfire>=4.3.3",
 ]
 
 [project.optional-dependencies]
 test = [
     "testing.postgresql>=1.3.0",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-mock>=3.12.0",
+    "freezegun>=1.5.0",
+    "numpy>=1.24.0",
 ]
+
+[tool.pytest.ini_options]
+addopts = "--tb=short"
