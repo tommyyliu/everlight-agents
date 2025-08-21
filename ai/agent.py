@@ -4,10 +4,10 @@ Uses pydantic-ai and logfire for observability.
 """
 
 from typing import Dict, List, Callable, Optional
+import os
 import logfire
-from pydantic_ai import Agent, RunContext
+from pydantic_ai import Agent
 from uuid import UUID
-from sqlalchemy import select
 
 from ai.tools import (
     AgentContext,
@@ -91,7 +91,10 @@ class AgentFactory:
             raise ValueError(f"Agent '{agent_name}' not found for user {user_id}")
         
         selected_model = model or "gemini-2.0-flash-exp"
-        logfire.configure()
+        
+        # Skip logfire configuration in testing/eval environments
+        if not os.getenv("TESTING") and not os.getenv("LOGFIRE_IGNORE_NO_CONFIG"):
+            logfire.configure()
         
         agent = Agent(
             model=selected_model,
@@ -169,3 +172,72 @@ def get_agent_config(user_id: UUID, agent_name: str) -> Optional[DBAgent]:
         DBAgent.user_id == user_id,
         DBAgent.name == agent_name
     ).first()
+
+
+def get_user_ai_base(user_id: UUID, agent_name: str, model: Optional[str] = None, db_session=None):
+    """Create an agent that matches genkit's API interface"""
+    
+    if db_session:
+        # Create agent with provided db session for evals
+        tool_registry = ToolRegistry()
+        
+        # Get agent configuration from database using provided session
+        agent_config = db_session.query(DBAgent).filter(
+            DBAgent.user_id == user_id, 
+            DBAgent.name == agent_name
+        ).first()
+        
+        if not agent_config:
+            raise ValueError(f"Agent '{agent_name}' not found for user {user_id}")
+        
+        selected_model = model or "gemini-2.0-flash-exp"
+        
+        # Skip logfire configuration in testing/eval environments
+        if not os.getenv("TESTING") and not os.getenv("LOGFIRE_IGNORE_NO_CONFIG"):
+            logfire.configure()
+        
+        agent = Agent(
+            model=selected_model,
+            deps_type=AgentContext,
+            system_prompt=agent_config.prompt
+        )
+        
+        # Add tools based on database configuration
+        available_tools = tool_registry.get_tools_by_names(agent_config.tools)
+        
+        for tool_name, tool_func in available_tools.items():
+            agent.tool(tool_func)
+        
+        # Add generate method directly to agent to match genkit API
+        async def generate(prompt: str, tools: List[str] = None):
+            """Generate response using the agent"""
+            context = AgentContext(
+                user_id=user_id,
+                agent_name=agent_name,
+                db_session=db_session
+            )
+            
+            result = await agent.run(prompt, deps=context)
+            return str(result)
+        
+        agent.generate = generate
+        return agent
+    else:
+        # Use standard agent creation
+        agent = create_agent_from_db(user_id, agent_name, model)
+        
+        # Add generate method to match genkit API
+        async def generate(prompt: str, tools: List[str] = None):
+            """Generate response using the agent"""
+            context = AgentContext(
+                user_id=user_id,
+                agent_name=agent_name
+            )
+            
+            with logfire.span("agent_generate", user_id=str(user_id), agent_name=agent_name):
+                result = await agent.run(prompt, deps=context)
+                logfire.info("Agent generation completed", response_length=len(str(result)))
+                return str(result)
+        
+        agent.generate = generate
+        return agent

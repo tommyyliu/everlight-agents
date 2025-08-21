@@ -10,7 +10,7 @@ import logfire
 from pydantic_ai import RunContext
 from pydantic import BaseModel
 
-from ai.comms.channels import send_message
+from ai.comms.send_message import send_message
 from . import AgentContext, log_tool_call
 
 
@@ -40,13 +40,21 @@ async def send_message_tool(ctx: RunContext[AgentContext], input_data: SendMessa
             ctx.deps.agent_name, 
             None
         )
-        return "Message sent."
+        
+        local_mode = os.getenv("LOCAL_DEVELOPMENT", "false").lower() == "true"
+        if local_mode:
+            return f"Message sent directly to {input_data.channel} (local development mode)."
+        else:
+            return f"Message queued for delivery to {input_data.channel} via Cloud Tasks."
 
 
 async def schedule_message(ctx: RunContext[AgentContext], input_data: ScheduleMessageInput) -> str:
     """Schedule a message to be sent at a specific time."""
     with logfire.span("schedule_message", channel=input_data.channel, run_at=input_data.run_at.isoformat()):
         log_tool_call(ctx, "schedule_message", input_data.model_dump())
+        
+        if os.getenv("TESTING"):
+            return f"Scheduled message recorded (test mode; delivery at {input_data.run_at})."
         
         result = send_message(
             ctx.deps.user_id,
@@ -56,5 +64,12 @@ async def schedule_message(ctx: RunContext[AgentContext], input_data: ScheduleMe
             input_data.run_at
         )
         
+        local_mode = os.getenv("LOCAL_DEVELOPMENT", "false").lower() == "true"
+        
         logfire.info("Message scheduled", channel=input_data.channel, run_at=input_data.run_at.isoformat())
-        return result
+        
+        if local_mode:
+            delay_seconds = max(0, (input_data.run_at - datetime.now()).total_seconds())
+            return f"Message scheduled for {input_data.channel} at {input_data.run_at} (local mode: {delay_seconds:.1f}s delay)."
+        else:
+            return f"Message scheduled for {input_data.channel} at {input_data.run_at} via Cloud Tasks."
