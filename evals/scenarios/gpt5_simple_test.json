@@ -1,0 +1,7 @@
+{
+  "name": "gpt5_simple_test",
+  "model": "openai:gpt-4o",
+  "prompt_name": "eforos_v3_tommy",
+  "channel": "raw_data_entries", 
+  "message": "User reports feeling tired and having trouble sleeping. They've been drinking more coffee lately and working late. Temperature in bedroom has been 75°F consistently."
+}

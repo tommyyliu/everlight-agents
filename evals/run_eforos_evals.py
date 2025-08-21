@@ -134,7 +134,7 @@ async def run_scenario(db: Session, scenario: dict[str, Any]) -> dict[str, Any]:
 
     model = scenario.get("model") or os.getenv("GENKIT_MODEL")
     from ai.agent import get_user_ai_base
-    ai = get_user_ai_base(user.id, agent.name, model=model)
+    ai = get_user_ai_base(user.id, agent.name, model=model, db_session=db)
 
     # Prepare a simple per-step message log in the output directory to verify processing coverage
     name = scenario.get("name") or f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
