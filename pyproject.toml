@@ -29,3 +29,9 @@ test = [
 
 [tool.pytest.ini_options]
 addopts = "--tb=short"
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.3.0",
+    "ruff>=0.12.10",
+]

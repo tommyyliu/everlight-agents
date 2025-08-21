@@ -57,7 +57,9 @@ def deliver_message(
             schedule_time = schedule_time.replace(tzinfo=timezone.utc)
         else:
             schedule_time = schedule_time.astimezone(timezone.utc)
-        from google.protobuf.timestamp_pb2 import Timestamp  # local import to avoid import unless needed
+        from google.protobuf.timestamp_pb2 import (
+            Timestamp,
+        )  # local import to avoid import unless needed
 
         ts = Timestamp()
         ts.FromDatetime(schedule_time)

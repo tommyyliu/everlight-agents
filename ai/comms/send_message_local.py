@@ -35,9 +35,15 @@ def deliver_message(
 
     if schedule_time:
         # Calculate delay and schedule for later
-        now = datetime.now(tz=schedule_time.tzinfo) if schedule_time.tzinfo else datetime.now()
+        now = (
+            datetime.now(tz=schedule_time.tzinfo)
+            if schedule_time.tzinfo
+            else datetime.now()
+        )
         delay_seconds = max(0, (schedule_time - now).total_seconds())
-        print(f"   [LOCAL] Scheduling message for {schedule_time} (delay: {delay_seconds:.1f}s)")
+        print(
+            f"   [LOCAL] Scheduling message for {schedule_time} (delay: {delay_seconds:.1f}s)"
+        )
 
         def delayed_send():
             time.sleep(delay_seconds)

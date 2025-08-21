@@ -36,9 +36,8 @@ class AgentResponse(BaseModel):
 
 
 async def process_agent_message(
-        message_notification: MessageNotification,
-        user: User,
-        agent: Agent):
+    message_notification: MessageNotification, user: User, agent: Agent
+):
     """
     Process a message for a specific ai.
     This function creates a prompt for the ai and augments it with message information.
@@ -76,17 +75,24 @@ async def process_agent_message(
 
 @app.post("/message", status_code=status.HTTP_202_ACCEPTED)
 async def new_message(
-        message_notification: MessageNotification,
-        background_tasks: BackgroundTasks,
-        db: Annotated[Session, Depends(get_db_session)]):
+    message_notification: MessageNotification,
+    background_tasks: BackgroundTasks,
+    db: Annotated[Session, Depends(get_db_session)],
+):
     """
     Handle a new message notification.
     This endpoint fetches agents subscribed to the specified channel and processes the message.
     """
     # Fetch agents that are subscribed to this channel
-    agent_query = select(Agent).join(AgentSubscription).filter(AgentSubscription.channel == message_notification.channel)
+    agent_query = (
+        select(Agent)
+        .join(AgentSubscription)
+        .filter(AgentSubscription.channel == message_notification.channel)
+    )
     agents = db.execute(agent_query).scalars().all()
-    user = db.execute(select(User).filter(User.id == message_notification.user_id)).scalar_one()
+    user = db.execute(
+        select(User).filter(User.id == message_notification.user_id)
+    ).scalar_one()
 
     if not agents:
         print("No agents found.")
@@ -94,7 +100,7 @@ async def new_message(
 
     print(f"Found {len(agents)} agents.")
     print(f"Message: {message_notification.message}")
-    
+
     # Process the message for each agent
     processed_agents = 0
     for agent in agents:
@@ -103,14 +109,13 @@ async def new_message(
         print(f"{agent.name} informed of message.")
         # Add the task to background processing
         background_tasks.add_task(
-            process_agent_message,
-            message_notification,
-            user,
-            agent
+            process_agent_message, message_notification, user, agent
         )
         processed_agents += 1
 
-    return {"message": f"Message accepted. Processing for {processed_agents} agent(s) has been initiated."}
+    return {
+        "message": f"Message accepted. Processing for {processed_agents} agent(s) has been initiated."
+    }
 
 
 @app.get("/health")

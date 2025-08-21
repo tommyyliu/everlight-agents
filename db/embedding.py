@@ -4,9 +4,11 @@ import numpy as np
 from google import genai
 from google.genai import types
 
+
 @cache
 def get_client():
     return genai.Client()
+
 
 def embed_document(text: str) -> np.ndarray:
     result = get_client().models.embed_content(
@@ -17,6 +19,7 @@ def embed_document(text: str) -> np.ndarray:
 
     embeddings = np.array(result.embeddings[0].values)
     return embeddings
+
 
 def embed_query(query: str) -> np.ndarray:
     result = get_client().models.embed_content(

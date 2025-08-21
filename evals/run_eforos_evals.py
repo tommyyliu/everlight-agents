@@ -81,7 +81,9 @@ def read_text_file(path: str) -> str:
 
 
 def create_user_and_agent(db: Session, prompt: str) -> tuple[User, Agent]:
-    user = User(id=uuid4(), email=f"eval+{uuid4()}@example.com", firebase_user_id=str(uuid4()))
+    user = User(
+        id=uuid4(), email=f"eval+{uuid4()}@example.com", firebase_user_id=str(uuid4())
+    )
     db.add(user)
     db.commit()
 
@@ -112,7 +114,9 @@ def create_user_and_agent(db: Session, prompt: str) -> tuple[User, Agent]:
     return user, agent
 
 
-def build_augmented_prompt(agent_prompt: str, user_email: str, channel: str, message: str) -> str:
+def build_augmented_prompt(
+    agent_prompt: str, user_email: str, channel: str, message: str
+) -> str:
     user_info = (
         f"\nYour user is {user_email}. The current time is {datetime.now().isoformat()}.\n"
         f"You have tool-calling enabled. Do what you need to, then persist a clear note we can audit.\n"
@@ -125,7 +129,6 @@ def build_augmented_prompt(agent_prompt: str, user_email: str, channel: str, mes
     return f"{agent_prompt}\n{user_info}{message_info}"
 
 
-
 async def run_scenario(db: Session, scenario: dict[str, Any]) -> dict[str, Any]:
     # Load prompt by name/path/default
     prompt_key, prompt_text = get_prompt_text(scenario)
@@ -134,6 +137,7 @@ async def run_scenario(db: Session, scenario: dict[str, Any]) -> dict[str, Any]:
 
     model = scenario.get("model") or os.getenv("GENKIT_MODEL")
     from ai.agent import get_user_ai_base
+
     ai = get_user_ai_base(user.id, agent.name, model=model, db_session=db)
 
     # Prepare a simple per-step message log in the output directory to verify processing coverage
@@ -142,14 +146,20 @@ async def run_scenario(db: Session, scenario: dict[str, Any]) -> dict[str, Any]:
     run_dir = OUT_DIR / name / prompt_key
     run_dir.mkdir(parents=True, exist_ok=True)
     step_log_path = run_dir / "steps.ndjson"
+
     def _log_step(step: str, message: str):
         try:
             with step_log_path.open("a") as f:
-                f.write(json.dumps({
-                    "timestamp": datetime.now().isoformat(),
-                    "step": step,
-                    "message": message,
-                }) + "\n")
+                f.write(
+                    json.dumps(
+                        {
+                            "timestamp": datetime.now().isoformat(),
+                            "step": step,
+                            "message": message,
+                        }
+                    )
+                    + "\n"
+                )
         except Exception:
             pass
 
@@ -170,38 +180,49 @@ async def run_scenario(db: Session, scenario: dict[str, Any]) -> dict[str, Any]:
             base_delay = float(os.getenv("EVAL_BASE_DELAY_SEC", "0.5"))
             for attempt in range(max_attempts):
                 try:
-                   if os.getenv("EVAL_DRY_RUN") == "1":
-                       _log_step(str(idx), "DRY RUN: skipped model call")
-                       last_exc = None
-                       break
-                   await ai.generate(prompt=augmented_prompt, tools=agent.tools)
-                   last_exc = None
-                   break
+                    if os.getenv("EVAL_DRY_RUN") == "1":
+                        _log_step(str(idx), "DRY RUN: skipped model call")
+                        last_exc = None
+                        break
+                    await ai.generate(prompt=augmented_prompt, tools=agent.tools)
+                    last_exc = None
+                    break
                 except Exception as e:
                     last_exc = e
-                    _log_step(str(idx), f"ERROR attempt {attempt+1}/{max_attempts}: {type(e).__name__}: {e}")
+                    _log_step(
+                        str(idx),
+                        f"ERROR attempt {attempt+1}/{max_attempts}: {type(e).__name__}: {e}",
+                    )
                     import traceback as _tb
+
                     cause = getattr(e, "__cause__", None)
                     context = getattr(e, "__context__", None)
                     with (run_dir / "errors.ndjson").open("a") as ef:
-                        ef.write(json.dumps({
-                            "timestamp": datetime.now().isoformat(),
-                            "step": str(idx),
-                            "attempt": attempt+1,
-                            "error": str(e),
-                            "type": type(e).__name__,
-                            "cause": repr(cause) if cause else None,
-                            "context": repr(context) if context else None,
-                            "model": model,
-                            "traceback": _tb.format_exc(),
-                        }) + "\n")
+                        ef.write(
+                            json.dumps(
+                                {
+                                    "timestamp": datetime.now().isoformat(),
+                                    "step": str(idx),
+                                    "attempt": attempt + 1,
+                                    "error": str(e),
+                                    "type": type(e).__name__,
+                                    "cause": repr(cause) if cause else None,
+                                    "context": repr(context) if context else None,
+                                    "model": model,
+                                    "traceback": _tb.format_exc(),
+                                }
+                            )
+                            + "\n"
+                        )
                     # Backoff before retrying
-                    await asyncio.sleep(base_delay * (2 ** attempt))
+                    await asyncio.sleep(base_delay * (2**attempt))
             if last_exc is not None:
                 # Give up on this step after retries
                 _log_step(str(idx), "FAILED after retries")
             # Optional pacing to reduce chance of rate limiting
-            await asyncio.sleep(float(os.getenv("EVAL_STEP_DELAY_SEC", str(base_delay))))
+            await asyncio.sleep(
+                float(os.getenv("EVAL_STEP_DELAY_SEC", str(base_delay)))
+            )
     else:
         augmented_prompt = build_augmented_prompt(
             agent_prompt=agent.prompt,
@@ -226,8 +247,12 @@ async def run_scenario(db: Session, scenario: dict[str, Any]) -> dict[str, Any]:
             with (run_dir / "errors.ndjson").open("a") as ef:
                 ef.write(json.dumps(err) + "\n")
 
-
-    notes = db.query(Note).filter(Note.user_id == user.id, Note.owner == agent.id).order_by(Note.created_at.asc()).all()
+    notes = (
+        db.query(Note)
+        .filter(Note.user_id == user.id, Note.owner == agent.id)
+        .order_by(Note.created_at.asc())
+        .all()
+    )
     notes_dump = [
         {
             "id": str(n.id),
@@ -273,7 +298,11 @@ def save_result(name: str, prompt_key: str, result: dict[str, Any]) -> None:
     run_dir.mkdir(parents=True, exist_ok=True)
 
     with (run_dir / "config.json").open("w") as f:
-        json.dump({"scenario": result["scenario"], "timestamp": result["timestamp"]}, f, indent=2)
+        json.dump(
+            {"scenario": result["scenario"], "timestamp": result["timestamp"]},
+            f,
+            indent=2,
+        )
 
     # Save prompt only for single-message scenarios
     if result.get("augmented_prompt") is not None:
@@ -319,14 +348,58 @@ def list_cmd() -> None:
 
 @cli.command(name="run")
 @click.option("--name", "selected_name", help="Run only this scenario by name.")
-@click.option("--model", default=None, help="Override model id for the run (fallback to GENKIT_MODEL).")
-@click.option("--prompt", "prompt_name", default=None, help="Override prompt name (maps to evals/prompts/<name>.md or ai/default_prompts/<name>.md).")
-@click.option("--step-delay", type=float, default=None, help="Override per-step delay seconds (EVAL_STEP_DELAY_SEC).")
-@click.option("--max-attempts", type=int, default=None, help="Override max attempts per step (EVAL_MAX_ATTEMPTS).")
-@click.option("--base-delay", type=float, default=None, help="Override base delay for backoff (EVAL_BASE_DELAY_SEC).")
-@click.option("--timeout", "gen_timeout", type=float, default=None, help="Per-generate timeout seconds (EVAL_GENERATE_TIMEOUT_SEC).")
-@click.option("--dry-run", is_flag=True, default=False, help="Do not call the model; only write prompts/logs.")
-def run_cmd(selected_name: str | None, model: str | None, prompt_name: str | None, step_delay: float | None, max_attempts: int | None, base_delay: float | None, gen_timeout: float | None, dry_run: bool) -> None:
+@click.option(
+    "--model",
+    default=None,
+    help="Override model id for the run (fallback to GENKIT_MODEL).",
+)
+@click.option(
+    "--prompt",
+    "prompt_name",
+    default=None,
+    help="Override prompt name (maps to evals/prompts/<name>.md or ai/default_prompts/<name>.md).",
+)
+@click.option(
+    "--step-delay",
+    type=float,
+    default=None,
+    help="Override per-step delay seconds (EVAL_STEP_DELAY_SEC).",
+)
+@click.option(
+    "--max-attempts",
+    type=int,
+    default=None,
+    help="Override max attempts per step (EVAL_MAX_ATTEMPTS).",
+)
+@click.option(
+    "--base-delay",
+    type=float,
+    default=None,
+    help="Override base delay for backoff (EVAL_BASE_DELAY_SEC).",
+)
+@click.option(
+    "--timeout",
+    "gen_timeout",
+    type=float,
+    default=None,
+    help="Per-generate timeout seconds (EVAL_GENERATE_TIMEOUT_SEC).",
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    default=False,
+    help="Do not call the model; only write prompts/logs.",
+)
+def run_cmd(
+    selected_name: str | None,
+    model: str | None,
+    prompt_name: str | None,
+    step_delay: float | None,
+    max_attempts: int | None,
+    base_delay: float | None,
+    gen_timeout: float | None,
+    dry_run: bool,
+) -> None:
     """Run scenarios. By default, runs all discovered scenarios."""
     ensure_out_dir()
 
@@ -383,7 +456,10 @@ def run_cmd(selected_name: str | None, model: str | None, prompt_name: str | Non
         SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
         db = SessionLocal()
         for scenario in scenarios:
-            name = scenario.get("name") or f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            name = (
+                scenario.get("name")
+                or f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            )
             # Set per-run tool log file under <scenario>/<prompt>
             prompt_key, _ = get_prompt_text(scenario)
             tool_log = OUT_DIR / name / prompt_key / "tool_calls.ndjson"

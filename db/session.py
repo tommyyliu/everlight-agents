@@ -15,7 +15,6 @@ if not DATABASE_URL:
     )
 
 
-
 def get_db_session():
     db_url = os.getenv("DATABASE_URL")
     if not db_url:
@@ -28,9 +27,7 @@ def get_db_session():
         db_url = db_url.replace("postgresql://", "postgresql+psycopg://")
 
     engine = create_engine(
-        db_url,
-        connect_args={"prepare_threshold": None},
-        poolclass=NullPool
+        db_url, connect_args={"prepare_threshold": None}, poolclass=NullPool
     )
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

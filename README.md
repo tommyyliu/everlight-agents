@@ -76,7 +76,7 @@ Outputs are written under evals/out/<scenario_name> including config.json, promp
 
 ## API Endpoints
 
-- `POST /agent/message` - Process agent messages
+- `POST /message` - Process agent messages
 - `GET /health` - Health check
 
 ## Architecture
