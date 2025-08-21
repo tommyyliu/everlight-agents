@@ -1,0 +1,14 @@
+{
+  "name": "67_travel_misconnect_risk_mct_and_gate_distance",
+  "model": "googleai/gemini-2.5-flash",
+  "prompt_name": "eforos_v2_claude",
+  "channel": "raw_data_entries",
+  "messages_sequence": [
+    "Airline App — Trip #ABC123 (Same PNR).\nSEA → DEN UA2143 Arr 17:05 (Gate B95)\nDEN → ATL UA771 Dep 17:40 (Gate B15)\nSeat: 19C; Bag: carry-on only; Status: On time",
+    "DEN Airport Ops — MCT table (same terminal, same airline): 35 min",
+    "FIDS history (SEA→DEN UA2143 4–7pm block).\nOn-time rate: 28%\nAvg delay: 22 min\nP90 delay: 38 min",
+    "DEN gate map.\nB95 → B15 average walk 16–18 minutes (no trains).\nEvening congestion expected near B concourse central node.",
+    "NWS weather — DEN 17:00–19:00.\nTSRA likely; gusts to 25 kts; moderate precip; ground delay program possible",
+    "Calendar — 'Client dinner (Midtown ATL, 20:00)'.\nNote: prefer aisle; carry-on; can move to nonstop if earlier."
+  ]
+}

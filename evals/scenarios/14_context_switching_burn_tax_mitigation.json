@@ -1,0 +1,12 @@
+{
+  "name": "14_context_switching_burn_tax_mitigation",
+  "model": "googleai/gemini-2.5-flash",
+  "prompt_name": "eforos_v1",
+  "channel": "raw_data_entries",
+  "messages_sequence": [
+    "Calendar: 22 meetings/week; avg 6 distinct projects/day; frequent 15-minute gaps.",
+    "Slack: High DM load; frequent interrupts from two stakeholder accounts.",
+    "Journal: Feels 'busy but not productive'; tasks spilling into nights.",
+    "Role/preferences: Engineering manager of 12; values maker time; ADHD tendencies."
+  ]
+}

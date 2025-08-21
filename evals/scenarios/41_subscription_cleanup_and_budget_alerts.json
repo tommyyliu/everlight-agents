@@ -1,0 +1,12 @@
+{
+  "name": "41_subscription_cleanup_and_budget_alerts",
+  "model": "googleai/gemini-2.5-flash",
+  "prompt_name": "eforos_v1",
+  "channel": "raw_data_entries",
+  "messages_sequence": [
+    "Bank emails: Multiple recurring charges for streaming/SaaS detected.",
+    "Usage data: Low app usage across several subscriptions.",
+    "Billing: Several promo renewals approaching.",
+    "Goal: Reduce monthly spend by about $150."
+  ]
+}

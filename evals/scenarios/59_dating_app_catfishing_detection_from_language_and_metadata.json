@@ -1,0 +1,13 @@
+{
+  "name": "59_dating_app_catfishing_detection_from_language_and_metadata",
+  "model": "googleai/gemini-2.5-flash",
+  "prompt_name": "eforos_v1",
+  "channel": "raw_data_entries",
+  "messages_sequence": [
+    "Photos: EXIF stripped; lighting/timezone inconsistencies with claimed city; reverse image search finds stock-like matches.",
+    "Language: High mirroring of user's phrases; unusually fast intimacy; evasive answers to local reference checks.",
+    "Timing: Replies arrive exactly every 12 hours at :07 past.",
+    "Request: Money asked for 'emergency travel'.",
+    "User profile: Privacy-conscious; prefers long-text chats."
+  ]
+}

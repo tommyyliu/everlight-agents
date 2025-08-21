@@ -1,0 +1,203 @@
+{
+  "name": "12_grief_anniversary_support_expanded",
+  "model": "googleai/gemini-2.5-flash",
+  "prompt_name": "eforos_v1",
+  "channel": "raw_data_entries",
+
+  "_story": [
+    "This scenario follows a user, Aisling, over the course of a year as she navigates the grief following the death of her husband, Liam.",
+    "Initially, she is in shock, capturing her raw emotion in a private journal entry. The following months are a mix of administrative tasks and emotional withdrawal, marked by a slow return to professional life and routine.",
+    "As the one-year anniversary of Liam's death approaches, her behavior changes. She becomes more withdrawn, visiting his grave and declining social invitations.",
+    "The story culminates in a reflective journal entry just before the anniversary, where she finds solace in personal and cultural rituals, revealing a deeper layer of her identity (Irish-American heritage) and her coping mechanisms."
+  ],
+
+  "_digital_footprint": [
+    "The data simulates a realistic, dense digital trail spanning 12 months. The anniversary date is never explicitly stated in a calendar but is inferred from the timestamp of the first grief-stricken journal entry.",
+    "Extensive mundane entries (work updates, shopping lists, routine activities, social media interactions) are included to simulate normal life continuing alongside grief.",
+    "Key grief signals are scattered throughout: cemetery visits, declined social invitations, therapy appointments, support group meetings, and journal entries that provide direct emotional context.",
+    "The final journal entry contains subtle clues about the user's persona (finds comfort in ritual, Irish heritage via the Gaelic phrase) that an observant AI should be able to pick up on.",
+    "Digital patterns show realistic grief progression: initial chaos, gradual return to routine, seasonal dips, anniversary approach withdrawal."
+  ],
+
+  "messages_sequence": [
+    "{\"source\":\"notion_webhook\",\"event_type\":\"page.created\",\"timestamp\":\"2023-07-28T23:15:00Z\",\"payload\":{\"page_id\":\"a8d2f1b0-4e23-4f67-8a48-c2a9a3f1e9d0\",\"title\":\"The Longest Day\",\"content_snippet\":\"He's gone. I don't know how to write this. The world feels... gray. The doctor said it was peaceful. I held his hand. I'll love you forever, Liam.\"}}",
+
+    "{\"source\":\"gmail_api\",\"timestamp\":\"2023-07-29T08:30:00Z\",\"payload\":{\"id\":\"msg_001\",\"threadId\":\"thread_001\",\"labelIds\":[\"INBOX\"],\"snippet\":\"Thank you for choosing Sunset Funeral Home. Your invoice for services rendered is attached.\",\"payload\":{\"headers\":[{\"name\":\"Subject\",\"value\":\"Final Invoice - Liam O'Connor Services\"},{\"name\":\"From\",\"value\":\"billing@sunsetfh.com\"}]}}}",
+
+    "{\"source\":\"google_calendar_api\",\"timestamp\":\"2023-07-30T14:20:00Z\",\"payload\":{\"kind\":\"calendar#event\",\"id\":\"ev_funeral_001\",\"status\":\"confirmed\",\"summary\":\"Funeral Service - St. Patrick's\",\"start\":{\"dateTime\":\"2023-08-02T10:00:00-04:00\"},\"end\":{\"dateTime\":\"2023-08-02T12:00:00-04:00\"}}}",
+
+    "{\"source\":\"amazon_order_history\",\"timestamp\":\"2023-08-05T16:45:00Z\",\"payload\":{\"orderId\":\"112-1234567-8901234\",\"items\":[{\"title\":\"Black Dress - Size Medium\",\"quantity\":1},{\"title\":\"Kleenex Ultra Soft Tissues, 8 Pack\",\"quantity\":2}],\"total\":\"$67.43\"}}",
+
+    "{\"source\":\"notion_webhook\",\"event_type\":\"page.created\",\"timestamp\":\"2023-08-10T19:30:00Z\",\"payload\":{\"page_id\":\"b1c2d3e4-5f6a-7b8c-9d0e-1f2a3b4c5d6e\",\"title\":\"To Do\",\"content_snippet\":\"Call insurance company about life insurance claim. Find marriage certificate for social security. Cancel his gym membership. Return library books.\"}}",
+
+    "{\"source\":\"venmo_api\",\"timestamp\":\"2023-08-12T11:20:00Z\",\"payload\":{\"id\":\"payment_001\",\"amount\":-45.00,\"note\":\"Groceries for the week\",\"target\":{\"display_name\":\"Sarah M\"}}}",
+
+    "{\"source\":\"spotify_api\",\"timestamp\":\"2023-08-15T22:10:00Z\",\"payload\":{\"currently_playing\":{\"item\":{\"name\":\"Mad World\",\"artists\":[{\"name\":\"Gary Jules\"}]},\"progress_ms\":45000,\"is_playing\":true}}}",
+
+    "{\"source\":\"gmail_api\",\"timestamp\":\"2023-08-18T09:15:00Z\",\"payload\":{\"snippet\":\"We're sorry for your loss. Here's information about grief counseling services covered by your insurance.\",\"payload\":{\"headers\":[{\"name\":\"From\",\"value\":\"memberservices@bluecross.com\"},{\"name\":\"Subject\",\"value\":\"Grief Support Resources\"}]}}}",
+
+    "{\"source\":\"google_calendar_api\",\"timestamp\":\"2023-08-22T16:30:00Z\",\"payload\":{\"kind\":\"calendar#event\",\"id\":\"ev_therapy_001\",\"status\":\"confirmed\",\"summary\":\"Dr. Martinez - Therapy\",\"start\":{\"dateTime\":\"2023-08-25T14:00:00-04:00\"},\"end\":{\"dateTime\":\"2023-08-25T15:00:00-04:00\"},\"recurrence\":[\"RRULE:FREQ=WEEKLY;BYDAY=FR\"]}}",
+
+    "{\"source\":\"notion_webhook\",\"event_type\":\"page.updated\",\"timestamp\":\"2023-08-28T20:45:00Z\",\"payload\":{\"page_id\":\"c2d3e4f5-6a7b-8c9d-0e1f-2a3b4c5d6e7f\",\"title\":\"One Month\",\"content_snippet\":\"It's been a month. People keep asking how I'm doing. I don't know what to say. I made it through a whole day without crying yesterday. Is that progress?\"}}",
+
+    "{\"source\":\"amazon_order_history\",\"timestamp\":\"2023-09-03T13:22:00Z\",\"payload\":{\"orderId\":\"112-2345678-9012345\",\"items\":[{\"title\":\"Coffee Pods, Dark Roast, 80 Count\",\"quantity\":1},{\"title\":\"Frozen Dinners Variety Pack\",\"quantity\":2}],\"total\":\"$34.89\"}}",
+
+    "{\"source\":\"work_slack\",\"timestamp\":\"2023-09-05T08:30:00Z\",\"payload\":{\"channel\":\"#general\",\"user\":\"aisling.oconnor\",\"text\":\"Thanks everyone for your patience. I'll be returning to work next week on a part-time schedule.\",\"thread_ts\":null}}",
+
+    "{\"source\":\"gmail_api\",\"timestamp\":\"2023-09-12T14:20:00Z\",\"payload\":{\"snippet\":\"Your request for FMLA leave has been approved for an additional 4 weeks at reduced hours.\",\"payload\":{\"headers\":[{\"name\":\"From\",\"value\":\"hr@techcorp.com\"},{\"name\":\"Subject\",\"value\":\"FMLA Leave Extension Approved\"}]}}}",
+
+    "{\"source\":\"google_timeline_export\",\"timestamp\":\"2023-09-15T19:30:00Z\",\"payload\":{\"timelineObjects\":[{\"placeVisit\":{\"location\":{\"name\":\"Target\",\"address\":\"123 Main St, Anytown, NY\"},\"duration\":{\"startTimestamp\":\"2023-09-15T19:00:00Z\",\"endTimestamp\":\"2023-09-15T19:45:00Z\"}}}]}}",
+
+    "{\"source\":\"notion_webhook\",\"event_type\":\"page.created\",\"timestamp\":\"2023-09-20T21:15:00Z\",\"payload\":{\"page_id\":\"d3e4f5a6-7b8c-9d0e-1f2a-3b4c5d6e7f8a\",\"title\":\"Work stuff\",\"content_snippet\":\"Started the Morrison project today. Feels weird to care about deadlines again. But maybe routine is good? Dr. Martinez says structure helps.\"}}",
+
+    "{\"source\":\"venmo_api\",\"timestamp\":\"2023-09-25T17:45:00Z\",\"payload\":{\"id\":\"payment_002\",\"amount\":-25.00,\"note\":\"Coffee ☕\",\"target\":{\"display_name\":\"Starbucks\"}}}",
+
+    "{\"source\":\"spotify_api\",\"timestamp\":\"2023-10-01T16:20:00Z\",\"payload\":{\"recently_played\":[{\"track\":{\"name\":\"The Night We Met\",\"artists\":[{\"name\":\"Lord Huron\"}]}},{\"track\":{\"name\":\"Hurt\",\"artists\":[{\"name\":\"Johnny Cash\"}]}},{\"track\":{\"name\":\"Black\",\"artists\":[{\"name\":\"Pearl Jam\"}]}}]}}",
+
+    "{\"source\":\"google_calendar_api\",\"timestamp\":\"2023-10-08T12:30:00Z\",\"payload\":{\"kind\":\"calendar#event\",\"id\":\"ev_support_001\",\"status\":\"confirmed\",\"summary\":\"Grief Support Group - St. Mary's\",\"start\":{\"dateTime\":\"2023-10-10T19:00:00-04:00\"},\"end\":{\"dateTime\":\"2023-10-10T20:30:00-04:00\"}}}",
+
+    "{\"source\":\"gmail_api\",\"timestamp\":\"2023-10-12T10:15:00Z\",\"payload\":{\"snippet\":\"Reminder: Your next appointment with Dr. Martinez is scheduled for Friday at 2:00 PM.\",\"payload\":{\"headers\":[{\"name\":\"From\",\"value\":\"appointments@therapypartners.com\"}]}}}",
+
+    "{\"source\":\"notion_webhook\",\"event_type\":\"page.created\",\"timestamp\":\"2023-10-15T22:30:00Z\",\"payload\":{\"page_id\":\"e4f5a6b7-8c9d-0e1f-2a3b-4c5d6e7f8a9b\",\"title\":\"October blues\",\"content_snippet\":\"The leaves are changing. Liam loved fall. We were going to rake leaves together this year, maybe carve pumpkins. I bought a single pumpkin today and couldn't bring myself to carve it.\"}}",
+
+    "{\"source\":\"amazon_order_history\",\"timestamp\":\"2023-10-20T15:30:00Z\",\"payload\":{\"orderId\":\"112-3456789-0123456\",\"items\":[{\"title\":\"Halloween Candy Assortment\",\"quantity\":1},{\"title\":\"Porch Light Timer\",\"quantity\":1}],\"total\":\"$28.50\"}}",
+
+    "{\"source\":\"work_slack\",\"timestamp\":\"2023-10-25T11:45:00Z\",\"payload\":{\"channel\":\"#project-morrison\",\"user\":\"aisling.oconnor\",\"text\":\"Updated the client requirements doc. Should be ready for review by EOD tomorrow.\",\"thread_ts\":\"1698235500.123456\"}}",
+
+    "{\"source\":\"venmo_api\",\"timestamp\":\"2023-10-31T20:15:00Z\",\"payload\":{\"id\":\"payment_003\",\"amount\":-0.01,\"note\":\"You owe me a penny 🎃\",\"target\":{\"display_name\":\"Sarah M\"}}}",
+
+    "{\"source\":\"google_calendar_api\",\"timestamp\":\"2023-11-02T09:00:00Z\",\"payload\":{\"kind\":\"calendar#event\",\"id\":\"ev_declined_001\",\"status\":\"confirmed\",\"summary\":\"Halloween Party - Mike's House\",\"attendees\":[{\"email\":\"aisling.oconnor@email.com\",\"responseStatus\":\"declined\"}]}}",
+
+    "{\"source\":\"notion_webhook\",\"event_type\":\"page.updated\",\"timestamp\":\"2023-11-10T18:20:00Z\",\"payload\":{\"page_id\":\"f5a6b7c8-9d0e-1f2a-3b4c-5d6e7f8a9b0c\",\"title\":\"Thanksgiving plans\",\"content_snippet\":\"Mom wants me to come home for Thanksgiving. I don't know if I can handle all the questions and the empty chair where he should be. Maybe I'll just stay here and order Chinese.\"}}",
+
+    "{\"source\":\"spotify_api\",\"timestamp\":\"2023-11-15T14:30:00Z\",\"payload\":{\"currently_playing\":{\"item\":{\"name\":\"Thanksgiving Song\",\"artists\":[{\"name\":\"Adam Sandler\"}]},\"is_playing\":false}}}",
+
+    "{\"source\":\"amazon_order_history\",\"timestamp\":\"2023-11-20T12:45:00Z\",\"payload\":{\"orderId\":\"112-4567890-1234567\",\"items\":[{\"title\":\"Turkey TV Dinner\",\"quantity\":3},{\"title\":\"Pumpkin Pie - Single Serve\",\"quantity\":2}],\"total\":\"$23.67\"}}",
+
+    "{\"source\":\"gmail_api\",\"timestamp\":\"2023-11-23T16:30:00Z\",\"payload\":{\"snippet\":\"Happy Thanksgiving! We're thinking of you today and always.\",\"payload\":{\"headers\":[{\"name\":\"From\",\"value\":\"sarah.martinez@email.com\"},{\"name\":\"Subject\",\"value\":\"Thinking of you ❤️\"}]}}}",
+
+    "{\"source\":\"notion_webhook\",\"event_type\":\"page.created\",\"timestamp\":\"2023-11-24T19:45:00Z\",\"payload\":{\"page_id\":\"a6b7c8d9-0e1f-2a3b-4c5d-6e7f8a9b0c1d\",\"title\":\"Thanksgiving alone\",\"content_snippet\":\"Spent the day watching movies and eating pie. It wasn't as terrible as I thought it would be. Called Mom. She cried. I didn't, which felt like progress.\"}}",
+
+    "{\"source\":\"work_slack\",\"timestamp\":\"2023-11-27T08:15:00Z\",\"payload\":{\"channel\":\"#general\",\"user\":\"aisling.oconnor\",\"text\":\"Hope everyone had a good holiday. Ready to dive into Q4 planning.\",\"thread_ts\":null}}",
+
+    "{\"source\":\"google_timeline_export\",\"timestamp\":\"2023-12-02T11:30:00Z\",\"payload\":{\"timelineObjects\":[{\"placeVisit\":{\"location\":{\"name\":\"Target\",\"address\":\"123 Main St, Anytown, NY\"},\"duration\":{\"startTimestamp\":\"2023-12-02T11:00:00Z\",\"endTimestamp\":\"2023-12-02T12:15:00Z\"}}}]}}",
+
+    "{\"source\":\"amazon_order_history\",\"timestamp\":\"2023-12-05T20:30:00Z\",\"payload\":{\"orderId\":\"112-5678901-2345678\",\"items\":[{\"title\":\"Christmas Tree - 4ft Artificial\",\"quantity\":1},{\"title\":\"LED String Lights\",\"quantity\":2}],\"total\":\"$89.99\"}}",
+
+    "{\"source\":\"notion_webhook\",\"event_type\":\"page.updated\",\"timestamp\":\"2023-12-10T21:00:00Z\",\"payload\":{\"page_id\":\"b7c8d9e0-1f2a-3b4c-5d6e-7f8a9b0c1d2e\",\"title\":\"Christmas prep\",\"content_snippet\":\"Put up a small tree today. It looks lonely in the corner. Liam always insisted on a real tree, said the smell was half the magic. I bought artificial. Easier.\"}}",
+
+    "{\"source\":\"venmo_api\",\"timestamp\":\"2023-12-15T14:20:00Z\",\"payload\":{\"id\":\"payment_004\",\"amount\":-150.00,\"note\":\"Christmas gifts\",\"target\":{\"display_name\":\"Amazon\"}}}",
+
+    "{\"source\":\"gmail_api\",\"timestamp\":\"2023-12-18T09:30:00Z\",\"payload\":{\"snippet\":\"Your order has shipped! Expected delivery: Dec 20th\",\"payload\":{\"headers\":[{\"name\":\"From\",\"value\":\"no-reply@amazon.com\"},{\"name\":\"Subject\",\"value\":\"Your order is on the way!\"}]}}}",
+
+    "{\"source\":\"google_calendar_api\",\"timestamp\":\"2023-12-20T16:45:00Z\",\"payload\":{\"kind\":\"calendar#event\",\"id\":\"ev_declined_002\",\"status\":\"confirmed\",\"summary\":\"Office Holiday Party\",\"attendees\":[{\"email\":\"aisling.oconnor@email.com\",\"responseStatus\":\"declined\"}]}}",
+
+    "{\"source\":\"notion_webhook\",\"event_type\":\"page.created\",\"timestamp\":\"2023-12-24T23:30:00Z\",\"payload\":{\"page_id\":\"c8d9e0f1-2a3b-4c5d-6e7f-8a9b0c1d2e3f\",\"title\":\"Christmas Eve\",\"content_snippet\":\"Made it through Christmas Eve. Watched It's a Wonderful Life - our tradition. Cried during the part where George realizes how much his life mattered. Liam would have made some joke about the angel getting his wings.\"}}",
+
+    "{\"source\":\"spotify_api\",\"timestamp\":\"2023-12-25T10:15:00Z\",\"payload\":{\"recently_played\":[{\"track\":{\"name\":\"I'll Be Home for Christmas\",\"artists\":[{\"name\":\"Bing Crosby\"}]}},{\"track\":{\"name\":\"Blue Christmas\",\"artists\":[{\"name\":\"Elvis Presley\"}]}}]}}",
+
+    "{\"source\":\"venmo_api\",\"timestamp\":\"2023-12-31T23:45:00Z\",\"payload\":{\"id\":\"payment_005\",\"amount\":-12.00,\"note\":\"Champagne for one 🍾\",\"target\":{\"display_name\":\"Corner Market\"}}}",
+
+    "{\"source\":\"notion_webhook\",\"event_type\":\"page.created\",\"timestamp\":\"2024-01-01T00:30:00Z\",\"payload\":{\"page_id\":\"d9e0f1a2-3b4c-5d6e-7f8a-9b0c1d2e3f4a\",\"title\":\"New Year\",\"content_snippet\":\"2024. A year Liam will never see. I made it through the holidays. That has to count for something. Maybe this year I'll figure out who I am without him.\"}}",
+
+    "{\"source\":\"work_slack\",\"timestamp\":\"2024-01-08T09:00:00Z\",\"payload\":{\"channel\":\"#general\",\"user\":\"aisling.oconnor\",\"text\":\"Happy New Year everyone! Ready to tackle the Peterson project.\",\"thread_ts\":null}}",
+
+    "{\"source\":\"google_calendar_api\",\"timestamp\":\"2024-01-15T11:30:00Z\",\"payload\":{\"kind\":\"calendar#event\",\"id\":\"ev_therapy_002\",\"status\":\"confirmed\",\"summary\":\"Dr. Martinez - Therapy\",\"start\":{\"dateTime\":\"2024-01-19T14:00:00-05:00\"},\"end\":{\"dateTime\":\"2024-01-19T15:00:00-05:00\"}}}",
+
+    "{\"source\":\"amazon_order_history\",\"timestamp\":\"2024-01-20T16:20:00Z\",\"payload\":{\"orderId\":\"112-6789012-3456789\",\"items\":[{\"title\":\"Self-Help Book: Moving Forward After Loss\",\"quantity\":1},{\"title\":\"Herbal Tea Variety Pack\",\"quantity\":1}],\"total\":\"$31.47\"}}",
+
+    "{\"source\":\"notion_webhook\",\"event_type\":\"page.updated\",\"timestamp\":\"2024-02-01T20:10:00Z\",\"payload\":{\"page_id\":\"e0f1a2b3-4c5d-6e7f-8a9b-0c1d2e3f4a5b\",\"title\":\"Six months\",\"content_snippet\":\"Half a year. Dr. Martinez says I'm making progress. I can go whole days now without thinking about it constantly. Is that healing or forgetting? I don't want to forget.\"}}",
+
+    "{\"source\":\"venmo_api\",\"timestamp\":\"2024-02-14T18:30:00Z\",\"payload\":{\"id\":\"payment_006\",\"amount\":-35.00,\"note\":\"Dinner for one on Valentine's Day\",\"target\":{\"display_name\":\"Mario's Italian\"}}}",
+
+    "{\"source\":\"google_calendar_api\",\"timestamp\":\"2024-02-20T13:45:00Z\",\"payload\":{\"kind\":\"calendar#event\",\"id\":\"ev_support_002\",\"status\":\"confirmed\",\"summary\":\"Grief Support Group\",\"start\":{\"dateTime\":\"2024-02-22T19:00:00-05:00\"},\"end\":{\"dateTime\":\"2024-02-22T20:30:00-05:00\"}}}",
+
+    "{\"source\":\"work_slack\",\"timestamp\":\"2024-02-28T15:20:00Z\",\"payload\":{\"channel\":\"#project-peterson\",\"user\":\"aisling.oconnor\",\"text\":\"Great job everyone on the Q1 deliverables. Client feedback was overwhelmingly positive.\",\"thread_ts\":\"1709134800.654321\"}}",
+
+    "{\"source\":\"notion_webhook\",\"event_type\":\"page.created\",\"timestamp\":\"2024-03-05T19:45:00Z\",\"payload\":{\"page_id\":\"f1a2b3c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c\",\"title\":\"Spring cleaning\",\"content_snippet\":\"Started going through his clothes today. Donated three bags to Goodwill. Kept his favorite sweater and the cologne that still smells like him. Progress?\"}}",
+
+    "{\"source\":\"notion_webhook\",\"event_type\":\"page.updated\",\"timestamp\":\"2024-03-12T20:05:00Z\",\"payload\":{\"page_id\":\"c3b1e0a9-6f41-4a88-9e5a-1b2c8d7e4f6a\",\"title\":\"Work Project\",\"content_snippet\":\"Finally finished the Q1 presentation deck. It was a slog, but glad it's over. Maybe I can actually have a weekend.\"}}",
+
+    "{\"source\":\"amazon_order_history\",\"timestamp\":\"2024-03-17T14:30:00Z\",\"payload\":{\"orderId\":\"112-7890123-4567890\",\"items\":[{\"title\":\"Garden Seeds - Sunflower Mix\",\"quantity\":1},{\"title\":\"Small Planter Pots Set\",\"quantity\":1}],\"total\":\"$24.99\"}}",
+
+    "{\"source\":\"spotify_api\",\"timestamp\":\"2024-03-20T16:45:00Z\",\"payload\":{\"recently_played\":[{\"track\":{\"name\":\"Here Comes the Sun\",\"artists\":[{\"name\":\"The Beatles\"}]}},{\"track\":{\"name\":\"Three Little Birds\",\"artists\":[{\"name\":\"Bob Marley\"}]}}]}}",
+
+    "{\"source\":\"google_calendar_api\",\"timestamp\":\"2024-03-25T10:15:00Z\",\"payload\":{\"kind\":\"calendar#event\",\"id\":\"ev_accepted_001\",\"status\":\"confirmed\",\"summary\":\"Sarah's Birthday Brunch\",\"attendees\":[{\"email\":\"aisling.oconnor@email.com\",\"responseStatus\":\"accepted\"}]}}",
+
+    "{\"source\":\"venmo_api\",\"timestamp\":\"2024-03-30T12:20:00Z\",\"payload\":{\"id\":\"payment_007\",\"amount\":-45.00,\"note\":\"Brunch with the girls 🥞\",\"target\":{\"display_name\":\"Cafe Luna\"}}}",
+
+    "{\"source\":\"notion_webhook\",\"event_type\":\"page.created\",\"timestamp\":\"2024-04-03T21:30:00Z\",\"payload\":{\"page_id\":\"a2b3c4d5-6e7f-8a9b-0c1d-2e3f4a5b6c7d\",\"title\":\"Good day\",\"content_snippet\":\"Had brunch with Sarah and the girls today. Laughed until my stomach hurt. Felt guilty for enjoying myself, but Dr. Martinez says that's normal. Maybe I'm allowed to have good days.\"}}",
+
+    "{\"source\":\"work_slack\",\"timestamp\":\"2024-04-08T09:30:00Z\",\"payload\":{\"channel\":\"#general\",\"user\":\"aisling.oconnor\",\"text\":\"Excited to announce I'll be leading the new sustainability initiative. Looking forward to the challenge!\",\"thread_ts\":null}}",
+
+    "{\"source\":\"google_timeline_export\",\"timestamp\":\"2024-04-15T14:20:00Z\",\"payload\":{\"timelineObjects\":[{\"placeVisit\":{\"location\":{\"name\":\"Barnes & Noble\",\"address\":\"456 Book St, Anytown, NY\"},\"duration\":{\"startTimestamp\":\"2024-04-15T13:30:00Z\",\"endTimestamp\":\"2024-04-15T15:10:00Z\"}}}]}}",
+
+    "{\"source\":\"amazon_order_history\",\"timestamp\":\"2024-04-20T18:45:00Z\",\"payload\":{\"orderId\":\"112-8901234-5678901\",\"items\":[{\"title\":\"Novel: Where the Crawdads Sing\",\"quantity\":1},{\"title\":\"Bookmark - Celtic Design\",\"quantity\":1}],\"total\":\"$18.95\"}}",
+
+    "{\"source\":\"notion_webhook\",\"event_type\":\"page.updated\",\"timestamp\":\"2024-04-28T22:15:00Z\",\"payload\":{\"page_id\":\"b3c4d5e6-7f8a-9b0c-1d2e-3f4a5b6c7d8e\",\"title\":\"Reading again\",\"content_snippet\":\"Finished my first book since... since everything happened. It felt good to get lost in someone else's story for a while. Liam always said I read too fast. Maybe I'll slow down next time.\"}}",
+
+    "{\"source\":\"venmo_api\",\"timestamp\":\"2024-05-05T17:30:00Z\",\"payload\":{\"id\":\"payment_008\",\"amount\":-28.00,\"note\":\"Mother's Day flowers 💐\",\"target\":{\"display_name\":\"Bloom & Petal\"}}}",
+
+    "{\"source\":\"gmail_api\",\"timestamp\":\"2024-05-12T11:20:00Z\",\"payload\":{\"snippet\":\"Happy Mother's Day to the best mom! Thank you for the beautiful flowers.\",\"payload\":{\"headers\":[{\"name\":\"From\",\"value\":\"mom.oconnor@email.com\"},{\"name\":\"Subject\",\"value\":\"Thank you sweetie!\"}]}}}",
+
+    "{\"source\":\"google_calendar_api\",\"timestamp\":\"2024-05-18T15:45:00Z\",\"payload\":{\"kind\":\"calendar#event\",\"id\":\"ev_yoga_001\",\"status\":\"confirmed\",\"summary\":\"Beginner Yoga Class\",\"start\":{\"dateTime\":\"2024-05-22T18:00:00-04:00\"},\"end\":{\"dateTime\":\"2024-05-22T19:00:00-04:00\"}}}",
+
+    "{\"source\":\"notion_webhook\",\"event_type\":\"page.created\",\"timestamp\":\"2024-05-25T20:30:00Z\",\"payload\":{\"page_id\":\"c4d5e6f7-8a9b-0c1d-2e3f-4a5b6c7d8e9f\",\"title\":\"Yoga\",\"content_snippet\":\"Tried yoga today. Harder than it looks! But there was something peaceful about focusing only on breathing. The instructor said something about letting go. I'm not ready for that yet.\"}}",
+
+    "{\"source\":\"work_slack\",\"timestamp\":\"2024-06-02T10:15:00Z\",\"payload\":{\"channel\":\"#sustainability\",\"user\":\"aisling.oconnor\",\"text\":\"Great turnout for our first green initiative meeting! Love seeing everyone so engaged.\",\"thread_ts\":\"1717315200.789012\"}}",
+
+    "{\"source\":\"spotify_api\",\"timestamp\":\"2024-06-08T19:20:00Z\",\"payload\":{\"currently_playing\":{\"item\":{\"name\":\"Summer Breeze\",\"artists\":[{\"name\":\"Seals and Crofts\"}]},\"progress_ms\":120000,\"is_playing\":true}}}",
+
+    "{\"source\":\"amazon_order_history\",\"timestamp\":\"2024-06-15T13:40:00Z\",\"payload\":{\"orderId\":\"112-9012345-6789012\",\"items\":[{\"title\":\"Summer Dress - Blue Floral\",\"quantity\":1},{\"title\":\"Sandals - Size 8\",\"quantity\":1}],\"total\":\"$67.50\"}}",
+
+    "{\"source\":\"venmo_api\",\"timestamp\":\"2024-06-20T16:30:00Z\",\"payload\":{\"id\":\"payment_009\",\"amount\":-15.00,\"note\":\"Ice cream on a hot day 🍦\",\"target\":{\"display_name\":\"Sweet Treats\"}}}",
+
+    "{\"source\":\"notion_webhook\",\"event_type\":\"page.updated\",\"timestamp\":\"2024-06-25T21:45:00Z\",\"payload\":{\"page_id\":\"d5e6f7a8-9b0c-1d2e-3f4a-5b6c7d8e9f0a\",\"title\":\"Summer solstice\",\"content_snippet\":\"Longest day of the year. Sat in the garden and watched the sunflowers I planted. They're getting tall. Liam would have loved seeing them grow. One year ago, I couldn't imagine planting anything.\"}}",
+
+    "{\"source\":\"google_calendar_api\",\"timestamp\":\"2024-07-01T08:20:00Z\",\"payload\":{\"kind\":\"calendar#event\",\"id\":\"ev_4th_july\",\"status\":\"confirmed\",\"summary\":\"4th of July BBQ - Tom & Lisa's\",\"attendees\":[{\"email\":\"aisling.oconnor@email.com\",\"responseStatus\":\"tentative\"}]}}",
+
+    "{\"source\":\"work_slack\",\"timestamp\":\"2024-07-03T14:50:00Z\",\"payload\":{\"channel\":\"#out-of-office\",\"user\":\"aisling.oconnor\",\"text\":\"Taking a long weekend. Back Monday!\",\"thread_ts\":null}}",
+
+    "{\"source\":\"gmail_api\",\"timestamp\":\"2024-07-05T09:15:00Z\",\"payload\":{\"snippet\":\"Hope you had a great 4th! Missed you at the BBQ but totally understand.\",\"payload\":{\"headers\":[{\"name\":\"From\",\"value\":\"lisa.thompson@email.com\"},{\"name\":\"Subject\",\"value\":\"Missed you yesterday!\"}]}}}",
+
+    "{\"source\":\"notion_webhook\",\"event_type\":\"page.created\",\"timestamp\":\"2024-07-08T18:30:00Z\",\"payload\":{\"page_id\":\"e6f7a8b9-0c1d-2e3f-4a5b-6c7d8e9f0a1b\",\"title\":\"Almost time\",\"content_snippet\":\"Three weeks until the anniversary. I can feel it coming like a storm on the horizon. Dr. Martinez says it's normal to feel anxious. Grief doesn't follow calendars, but somehow it does.\"}}",
+
+    "{\"source\":\"amazon_order_history\",\"timestamp\":\"2024-07-10T20:15:00Z\",\"payload\":{\"orderId\":\"112-0123456-7890123\",\"items\":[{\"title\":\"Candles - Unscented White, 12 Pack\",\"quantity\":1},{\"title\":\"Flowers for Grave - Artificial Sunflowers\",\"quantity\":1}],\"total\":\"$43.87\"}}",
+
+    "{\"source\":\"google_calendar_api\",\"timestamp\":\"2024-07-12T11:30:00Z\",\"payload\":{\"kind\":\"calendar#event\",\"id\":\"ev_therapy_003\",\"status\":\"confirmed\",\"summary\":\"Dr. Martinez - Emergency Session\",\"start\":{\"dateTime\":\"2024-07-15T16:00:00-04:00\"},\"end\":{\"dateTime\":\"2024-07-15T17:00:00-04:00\"}}}",
+
+    "{\"source\":\"work_slack\",\"timestamp\":\"2024-07-16T08:45:00Z\",\"payload\":{\"channel\":\"#general\",\"user\":\"aisling.oconnor\",\"text\":\"Going to work from home rest of the week. Available on Slack for anything urgent.\",\"thread_ts\":null}}",
+
+    "{\"source\":\"spotify_api\",\"timestamp\":\"2024-07-18T14:20:00Z\",\"payload\":{\"recently_played\":[{\"track\":{\"name\":\"Tears in Heaven\",\"artists\":[{\"name\":\"Eric Clapton\"}]}},{\"track\":{\"name\":\"Hallelujah\",\"artists\":[{\"name\":\"Jeff Buckley\"}]}},{\"track\":{\"name\":\"Mad World\",\"artists\":[{\"name\":\"Gary Jules\"}]}}]}}",
+
+    "{\"source\":\"google_timeline_export\",\"timestamp\":\"2024-07-20T11:45:00Z\",\"payload\":{\"timelineObjects\":[{\"placeVisit\":{\"location\":{\"name\":\"Calvary Cemetery\",\"address\":\"49-02 Laurel Hill Blvd, Woodside, NY 11377\"},\"duration\":{\"startTimestamp\":\"2024-07-20T10:30:00Z\",\"endTimestamp\":\"2024-07-20T11:40:00Z\"},\"visitConfidence\":95,\"placeConfidence\":\"HIGH_CONFIDENCE\"}}]}}",
+
+    "{\"source\":\"venmo_api\",\"timestamp\":\"2024-07-20T12:00:00Z\",\"payload\":{\"id\":\"payment_010\",\"amount\":-8.50,\"note\":\"Coffee after\",\"target\":{\"display_name\":\"Dunkin'\"}}}",
+
+    "{\"source\":\"notion_webhook\",\"event_type\":\"page.created\",\"timestamp\":\"2024-07-20T19:30:00Z\",\"payload\":{\"page_id\":\"f7a8b9c0-1d2e-3f4a-5b6c-7d8e9f0a1b2c\",\"title\":\"At his grave\",\"content_snippet\":\"Went to see him today. Brought sunflowers - the ones from the garden weren't ready yet. Told him about work, about yoga, about how the world keeps spinning. A week to go.\"}}",
+
+    "{\"source\":\"gmail_api\",\"timestamp\":\"2024-07-21T16:45:00Z\",\"payload\":{\"snippet\":\"Thinking of you this week. Here if you need anything at all.\",\"payload\":{\"headers\":[{\"name\":\"From\",\"value\":\"sarah.martinez@email.com\"},{\"name\":\"Subject\",\"value\":\"Sending love ❤️\"}]}}}",
+
+    "{\"source\":\"google_calendar_api\",\"timestamp\":\"2024-07-22T09:15:12Z\",\"payload\":{\"kind\":\"calendar#event\",\"id\":\"ev_1234567890abcdef\",\"status\":\"confirmed\",\"summary\":\"Jen's Birthday Dinner\",\"organizer\":{\"email\":\"jen.doe@example.com\",\"displayName\":\"Jen Doe\"},\"start\":{\"dateTime\":\"2024-07-27T19:00:00-04:00\",\"timeZone\":\"America/New_York\"},\"end\":{\"dateTime\":\"2024-07-27T21:00:00-04:00\",\"timeZone\":\"America/New_York\"},\"attendees\":[{\"email\":\"user.email@example.com\",\"self\":true,\"responseStatus\":\"declined\"},{\"email\":\"jen.doe@example.com\",\"organizer\":true,\"responseStatus\":\"accepted\"}]}}",
+
+    "{\"source\":\"amazon_order_history\",\"timestamp\":\"2024-07-23T21:30:00Z\",\"payload\":{\"orderId\":\"112-1234567-8901234\",\"items\":[{\"title\":\"Comfort Food Variety Pack\",\"quantity\":2},{\"title\":\"Box of Tissues - Ultra Soft\",\"quantity\":3}],\"total\":\"$36.92\"}}",
+
+    "{\"source\":\"work_slack\",\"timestamp\":\"2024-07-24T10:20:00Z\",\"payload\":{\"channel\":\"#out-of-office\",\"user\":\"aisling.oconnor\",\"text\":\"Taking some personal days next week. Will be back Monday 8/5.\",\"thread_ts\":null}}",
+
+    "{\"source\":\"google_calendar_api\",\"timestamp\":\"2024-07-25T14:30:00Z\",\"payload\":{\"kind\":\"calendar#event\",\"id\":\"ev_mass_001\",\"status\":\"confirmed\",\"summary\":\"St. Patrick's Church - Evening Mass\",\"start\":{\"dateTime\":\"2024-07-26T18:00:00-04:00\"},\"end\":{\"dateTime\":\"2024-07-26T19:00:00-04:00\"}}}",
+
+    "{\"source\":\"google_timeline_export\",\"timestamp\":\"2024-07-26T18:45:00Z\",\"payload\":{\"timelineObjects\":[{\"placeVisit\":{\"location\":{\"name\":\"St. Patrick's Catholic Church\",\"address\":\"789 Church Ave, Anytown, NY\"},\"duration\":{\"startTimestamp\":\"2024-07-26T17:45:00Z\",\"endTimestamp\":\"2024-07-26T19:15:00Z\"}}}]}}",
+
+    "{\"source\":\"notion_webhook\",\"event_type\":\"page.updated\",\"timestamp\":\"2024-07-26T21:55:00Z\",\"payload\":{\"page_id\":\"f0e9a3c2-a48c-8a67-4f23-1b0d2f1b8a4e\",\"title\":\"Almost a year\",\"content_snippet\":\"The anniversary is in two days. Feels like yesterday and a hundred years ago. I went to the church today and lit a candle for him, just like my grandmother always did. Said a prayer. It's the small rituals that get you through, I suppose. 'Ar dheis Dé go raibh a anam.' I miss you so much.\"}}",
+
+    "{\"source\":\"spotify_api\",\"timestamp\":\"2024-07-27T22:30:00Z\",\"payload\":{\"currently_playing\":{\"item\":{\"name\":\"Danny Boy\",\"artists\":[{\"name\":\"Celtic Woman\"}]},\"progress_ms\":180000,\"is_playing\":true}}}",
+
+    "{\"source\":\"venmo_api\",\"timestamp\":\"2024-07-28T08:15:00Z\",\"payload\":{\"id\":\"payment_011\",\"amount\":-25.00,\"note\":\"Flowers for tomorrow\",\"target\":{\"display_name\":\"Bloom & Petal\"}}}",
+
+    "{\"source\":\"gmail_api\",\"timestamp\":\"2024-07-28T10:30:00Z\",\"payload\":{\"snippet\":\"Your flower delivery for July 28th has been confirmed. White roses and baby's breath.\",\"payload\":{\"headers\":[{\"name\":\"From\",\"value\":\"orders@bloompetal.com\"},{\"name\":\"Subject\",\"value\":\"Delivery Confirmation\"}]}}}",
+
+    "{\"source\":\"google_calendar_api\",\"timestamp\":\"2024-07-28T15:45:00Z\",\"payload\":{\"kind\":\"calendar#event\",\"id\":\"ev_private_001\",\"status\":\"confirmed\",\"summary\":\"Private time\",\"start\":{\"dateTime\":\"2024-07-28T00:00:00-04:00\"},\"end\":{\"dateTime\":\"2024-07-29T23:59:59-04:00\"},\"visibility\":\"private\"}}",
+
+    "{\"source\":\"notion_webhook\",\"event_type\":\"page.created\",\"timestamp\":\"2024-07-28T23:45:00Z\",\"payload\":{\"page_id\":\"a8b9c0d1-2e3f-4a5b-6c7d-8e9f0a1b2c3d\",\"title\":\"One year\",\"content_snippet\":\"It's been exactly one year. 365 days of learning how to breathe without him. I survived it. We survived it - me and his memory and all the love that doesn't have anywhere to go. I think he'd be proud of how far I've come. I think he'd want me to keep going. Tomorrow, I start year two.\"}}"
+  ]
+}

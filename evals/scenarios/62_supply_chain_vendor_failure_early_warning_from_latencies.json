@@ -1,0 +1,13 @@
+{
+  "name": "62_supply_chain_vendor_failure_early_warning_from_latencies",
+  "model": "googleai/gemini-2.5-flash",
+  "prompt_name": "eforos_v1",
+  "channel": "raw_data_entries",
+  "messages_sequence": [
+    "Email: Vendor reply times slowing; more after-hours messages.",
+    "Logistics: ASN variance up; partial shipments more frequent; QC defects creeping up.",
+    "Finance: Invoice errors; vendor demanding shorter payment terms.",
+    "Social signals: Glassdoor shows uptick in negative reviews referencing layoffs.",
+    "Business context: Vendor supplies ~40% of SKUs."
+  ]
+}

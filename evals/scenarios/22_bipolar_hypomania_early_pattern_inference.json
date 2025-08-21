@@ -1,0 +1,13 @@
+{
+  "name": "22_bipolar_hypomania_early_pattern_inference",
+  "model": "googleai/gemini-2.5-flash",
+  "prompt_name": "eforos_v1",
+  "channel": "raw_data_entries",
+  "messages_sequence": [
+    "Sleep: Average sleep dropped 7h→4h over 2 weeks with low fatigue reported.",
+    "Finance: Late-night spending sprees recorded.",
+    "Social: Rapid increase in spontaneous social plans.",
+    "Commits: Code commit bursts at 3–4 AM multiple nights.",
+    "Profile: Age 28; bipolar II; stable for 9 months."
+  ]
+}

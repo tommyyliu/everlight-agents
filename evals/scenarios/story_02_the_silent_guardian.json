@@ -1,0 +1,15 @@
+{
+  "name": "story_02_the_silent_guardian_neuro_linguistic_shift",
+  "model": "googleai/gemini-2.5-flash",
+  "prompt_name": "eforos_v1",
+  "channel": "raw_data_entries",
+  "messages_sequence": [
+    "Profile: Marcus, 45, consultant; 2 years of Notion journals and notes establish a stable writing baseline.",
+    "Week 1 signal: Daily journal entries show slightly more typos and shorter sentences than usual.",
+    "Week 2 linguistic: Sentence length down 18→12 words over ~10 days; vocabulary complexity ↓ ~30%; logical connectors (however, therefore) ↓ ~60%.",
+    "Input modality: Voice-to-text entries include more filler words ('um', 'like'); handwriting-to-text shows slight tremor patterns.",
+    "Timing/keystrokes: Writing sessions shorter but more frequent; time between keystrokes increasing; revisions shift to simple corrections vs complex edits.",
+    "Content changes: Emotional range narrowed; abstract thinking decreased; memory references vaguer (e.g., 'that meeting last week').",
+    "Self-report: Describes feeling just 'tired' but denies unusual stress; no acute symptoms reported."
+  ]
+}

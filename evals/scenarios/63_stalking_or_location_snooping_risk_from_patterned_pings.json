@@ -1,0 +1,13 @@
+{
+  "name": "63_stalking_or_location_snooping_risk_from_patterned_pings",
+  "model": "googleai/gemini-2.5-flash",
+  "prompt_name": "eforos_v1",
+  "channel": "raw_data_entries",
+  "messages_sequence": [
+    "Bluetooth alerts: Repeated unknown tracker pings near commute route and gym.",
+    "Social: Anonymous account viewing stories within minutes of posts.",
+    "Device permissions: New third-party app recently granted background location access.",
+    "History: Previously shared location with an ex.",
+    "Ecosystem: Mixed iOS/Android devices in circle."
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "17_early_glaucoma_screen_brightness_and_fonts",
+  "model": "googleai/gemini-2.5-flash",
+  "prompt_name": "eforos_v1",
+  "channel": "raw_data_entries",
+  "messages_sequence": [
+    "OS settings: Font scaling increased 100%→125%; brightness +20%; high-contrast toggles more frequent; higher PDF zoom.",
+    "Notes: Reports eye strain, night halos; headaches when reading; more night driving recently.",
+    "Profile: Age 52; family history of glaucoma; mild myopia."
+  ]
+}

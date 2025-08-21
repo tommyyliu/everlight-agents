@@ -1,0 +1,11 @@
+{
+  "name": "21_low_level_co_exposure_from_smart_home_and_biometrics",
+  "model": "googleai/gemini-2.5-flash",
+  "prompt_name": "eforos_v1",
+  "channel": "raw_data_entries",
+  "messages_sequence": [
+    "Smart home: CO sensor shows repeated spikes below alarm threshold over ~3 weeks.",
+    "Symptoms: Morning headaches and mild nausea; feels better after going outdoors.",
+    "Home context: Gas appliances; lives alone."
+  ]
+}

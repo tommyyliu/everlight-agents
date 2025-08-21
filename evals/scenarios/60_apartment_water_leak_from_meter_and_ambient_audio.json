@@ -1,0 +1,13 @@
+{
+  "name": "60_apartment_water_leak_from_meter_and_ambient_audio",
+  "model": "googleai/gemini-2.5-flash",
+  "prompt_name": "eforos_v1",
+  "channel": "raw_data_entries",
+  "messages_sequence": [
+    "Smart meter: Continuous low flow 0.2–0.4 gpm overnight for 14 days, including when away.",
+    "Ambient audio: Smart speaker detects faint continuous hiss in bathroom when no one is home.",
+    "Utility bill: Water charges up 28% month-over-month.",
+    "Environment: Bathroom humidity elevated.",
+    "Home context: Renter; top-floor unit."
+  ]
+}
