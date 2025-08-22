@@ -72,16 +72,18 @@ def create_default_agents_for_user(db: Session, user: User):
     # This sends the INSERT statements to the DB without committing the transaction.
     db.flush()
 
-    # 3. Subscribe Eforos to be notified when a new journal entry is created
-    eforos_subscription = AgentSubscription(
-        agent_id=eforos_agent.id, channel="raw_data_entries"
-    )
-
-    # 4. Subscribe Safine to be notified when Eforos has a new insight
+    # Seed default conversations (DMs and self) and subscriptions
+    # Subscriptions: private channels for both agents
+    eforos_subscription = AgentSubscription(agent_id=eforos_agent.id, channel="eforos")
     safine_subscription = AgentSubscription(agent_id=safine_agent.id, channel="safine")
 
-    db.add(eforos_subscription)
-    db.add(safine_subscription)
+    db.add_all([eforos_subscription, safine_subscription])
+
+    # Conversations: DM between Eforos and Safine; and Safine self-DM
+    from ai.tools.chat_seed import ensure_dm, ensure_self_dm
+
+    ensure_dm(db, user.id, eforos_agent, safine_agent)
+    ensure_self_dm(db, user.id, safine_agent)
 
     # The final commit saves all agents and subscriptions atomically
     db.commit()

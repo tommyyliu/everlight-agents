@@ -5,14 +5,14 @@ Note management tools for AI agents - creating, updating, and searching notes.
 from typing import Optional
 
 import logfire
-from pydantic_ai import RunContext
 from pydantic import BaseModel
+from pydantic_ai import RunContext
 from sqlalchemy import select
 
+from ai.tools.core import AgentContext, log_tool_call
+from db.embedding import embed_document, embed_query
 from db.models import Agent as DBAgent, Note
 from db.session import get_db_session
-from db.embedding import embed_document, embed_query
-from . import AgentContext, log_tool_call
 
 
 class CreateNoteInput(BaseModel):

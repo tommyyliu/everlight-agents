@@ -145,3 +145,61 @@ class Note(Base):
     updated_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime, onupdate=func.now()
     )
+
+
+# --- Chat/Conversation Models ---
+class Conversation(Base):
+    __tablename__ = "conversations"
+
+    id: Mapped[UUID] = mapped_column(UUID, primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+    type: Mapped[str] = mapped_column(String(10))  # 'dm' or 'self'
+    name: Mapped[str] = mapped_column(String(255))
+    created_by_agent_id: Mapped[Optional[UUID]] = mapped_column(
+        ForeignKey("agents.id"), nullable=True
+    )
+
+    # For uniqueness of DM pairs and self conversations
+    dm_a_id: Mapped[Optional[UUID]] = mapped_column(
+        ForeignKey("agents.id"), nullable=True
+    )
+    dm_b_id: Mapped[Optional[UUID]] = mapped_column(
+        ForeignKey("agents.id"), nullable=True
+    )
+    self_agent_id: Mapped[Optional[UUID]] = mapped_column(
+        ForeignKey("agents.id"), nullable=True
+    )
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    __table_args__ = (
+        # One DM per unordered pair per user (store sorted into dm_a_id, dm_b_id)
+        UniqueConstraint(
+            "user_id", "dm_a_id", "dm_b_id", name="uq_conversation_dm_pair"
+        ),
+        # One self conversation per agent per user
+        UniqueConstraint("user_id", "self_agent_id", name="uq_conversation_self"),
+    )
+
+
+class ConversationMember(Base):
+    __tablename__ = "conversation_members"
+
+    conversation_id: Mapped[UUID] = mapped_column(
+        ForeignKey("conversations.id"), primary_key=True
+    )
+    agent_id: Mapped[UUID] = mapped_column(ForeignKey("agents.id"), primary_key=True)
+    role: Mapped[str] = mapped_column(String(20), default="member")
+    joined_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id: Mapped[UUID] = mapped_column(UUID, primary_key=True, default=uuid4)
+    conversation_id: Mapped[UUID] = mapped_column(ForeignKey("conversations.id"))
+    sender_agent_id: Mapped[UUID] = mapped_column(ForeignKey("agents.id"))
+    content: Mapped[str] = mapped_column(Text)
+    content_type: Mapped[str] = mapped_column(String(10), default="text")
+    metadata_json: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

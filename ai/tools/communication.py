@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from pydantic_ai import RunContext
 
 from ai.comms.send_message import send_message
-from . import AgentContext, log_tool_call
+from ai.tools.core import AgentContext, log_tool_call
 
 
 class SendMessageInput(BaseModel):

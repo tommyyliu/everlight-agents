@@ -3,13 +3,13 @@ Slate management tools for AI agents - reading and updating the user's Living Sl
 """
 
 import logfire
-from pydantic_ai import RunContext
 from pydantic import BaseModel
+from pydantic_ai import RunContext
 from sqlalchemy import select
 
+from ai.tools.core import AgentContext, log_tool_call
 from db.models import Slate
 from db.session import get_db_session
-from . import AgentContext, log_tool_call
 
 
 class UpdateSlateInput(BaseModel):

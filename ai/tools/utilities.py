@@ -7,7 +7,7 @@ from datetime import datetime
 import logfire
 from pydantic_ai import RunContext
 
-from . import AgentContext, log_tool_call
+from ai.tools.core import AgentContext, log_tool_call
 
 
 async def get_current_time(ctx: RunContext[AgentContext]) -> str:
