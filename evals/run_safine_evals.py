@@ -4,73 +4,46 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Any
-import click
-from uuid import uuid4
+from typing import Any, Optional
 
+import click
+import numpy as np
 import testing.postgresql
 from dotenv import load_dotenv
 from pgvector.psycopg import register_vector
-from sqlalchemy import create_engine, text, event
+from sqlalchemy import create_engine, text, select, event
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import NullPool
+from uuid import uuid4
 
+# Ensure repo root on path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from db.models import User, Agent, AgentSubscription, Note, Base
+from db.models import (
+    Base,
+    User,
+    Agent,
+    AgentSubscription,
+    Note,
+    RawEntry,
+    Slate,
+    ChatMessage,
+    Conversation,
+)
 
 BASE_DIR = Path(__file__).resolve().parent
-# Load .env from everlight-agents root to pick up API keys
+# Load .env from repo root (if present)
 load_dotenv(BASE_DIR.parent / ".env")
 OUT_DIR = BASE_DIR / "out"
 
 
+# --------------------------
+# Helpers
+# --------------------------
+
+
 def ensure_out_dir() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-
-
-def load_scenarios() -> list[dict[str, Any]]:
-    """Load scenarios from the legacy JSON file and from scenarios/*.json files.
-
-    Returns a flat list of scenario dicts. Each JSON file can be either a dict (single scenario)
-    or a list of dicts (multiple scenarios). Later entries with the same name override earlier ones.
-    """
-    scenarios: list[dict[str, Any]] = []
-
-    # 1) Load the legacy consolidated file if present
-    scenarios_path = BASE_DIR / "eforos_scenarios.json"
-    if scenarios_path.exists():
-        try:
-            data = json.loads(scenarios_path.read_text())
-            if isinstance(data, list):
-                scenarios.extend([s for s in data if isinstance(s, dict)])
-            elif isinstance(data, dict):
-                scenarios.append(data)
-        except Exception:
-            # Best-effort: ignore malformed file
-            pass
-
-    # 2) Load individual scenario JSONs from scenarios/
-    scenarios_dir = BASE_DIR / "scenarios" / "eforos"
-    if scenarios_dir.exists():
-        for p in sorted(scenarios_dir.glob("*.json")):
-            try:
-                data = json.loads(p.read_text())
-                if isinstance(data, list):
-                    scenarios.extend([s for s in data if isinstance(s, dict)])
-                elif isinstance(data, dict):
-                    scenarios.append(data)
-            except Exception:
-                # Skip malformed files but continue
-                continue
-
-    # 3) De-duplicate by name, last one wins
-    seen: dict[str, dict[str, Any]] = {}
-    for sc in scenarios:
-        name = sc.get("name") or f"scenario_{len(seen)+1}"
-        seen[name] = sc
-
-    return list(seen.values())
 
 
 def read_text_file(path: str) -> str:
@@ -80,7 +53,88 @@ def read_text_file(path: str) -> str:
     return p.read_text()
 
 
-def create_user_and_agent(db: Session, prompt: str) -> tuple[User, Agent]:
+def load_scenarios() -> list[dict[str, Any]]:
+    """Load scenarios from safine-specific file and from scenarios/*.json.
+
+    Returns merged list where last scenario with same name wins.
+    """
+    scenarios: list[dict[str, Any]] = []
+
+    # 1) safine_scenarios.json (optional)
+    safine_path = BASE_DIR / "safine_scenarios.json"
+    if safine_path.exists():
+        try:
+            data = json.loads(safine_path.read_text())
+            if isinstance(data, list):
+                scenarios.extend([s for s in data if isinstance(s, dict)])
+            elif isinstance(data, dict):
+                scenarios.append(data)
+        except Exception:
+            pass
+
+    # 2) scenarios/safine/*.json
+    scenarios_dir = BASE_DIR / "scenarios" / "safine"
+    if scenarios_dir.exists():
+        for p in sorted(scenarios_dir.glob("*.json")):
+            try:
+                data = json.loads(p.read_text())
+                if isinstance(data, list):
+                    scenarios.extend([s for s in data if isinstance(s, dict)])
+                elif isinstance(data, dict):
+                    scenarios.append(data)
+            except Exception:
+                continue
+
+    # 3) Deduplicate by name
+    seen: dict[str, dict[str, Any]] = {}
+    for sc in scenarios:
+        name = sc.get("name") or f"scenario_{len(seen)+1}"
+        seen[name] = sc
+
+    # Optionally filter to Safine-only scenarios (have mode or prompt_name == 'safine')
+    result = []
+    for sc in seen.values():
+        if sc.get("prompt_name") == "safine" or sc.get("mode") in (
+            "incoming_message",
+            "self_scheduled",
+        ):
+            result.append(sc)
+    return result
+
+
+def get_prompt_text(scenario: dict[str, Any]) -> tuple[str, str]:
+    """Resolve prompt text by name/path, default to safine.md."""
+    prompt_name = scenario.get("prompt_name")
+    prompt_path = scenario.get("prompt_path")
+    if prompt_name:
+        path = OUT_DIR.parent / "prompts" / f"{prompt_name}.md"
+        if path.exists():
+            return prompt_name, path.read_text()
+        fallback = Path("ai/default_prompts") / f"{prompt_name}.md"
+        if fallback.exists():
+            return prompt_name, fallback.read_text()
+    if prompt_path:
+        return Path(prompt_path).stem, read_text_file(prompt_path)
+    # default prompt
+    return "safine", read_text_file("ai/default_prompts/safine.md")
+
+
+# --------------------------
+# DB seeding
+# --------------------------
+
+
+def _zeros_vec(dim: int = 3072) -> np.ndarray:
+    return np.zeros(dim, dtype=np.float16)
+
+
+def create_user_and_agents(
+    db: Session, safine_prompt: str, eforos_prompt: Optional[str] = None
+) -> tuple[User, Agent, Agent]:
+    """Create a user plus Safine and Eforos agents.
+
+    Returns (user, safine, eforos).
+    """
     user = User(
         id=uuid4(), email=f"eval+{uuid4()}@example.com", firebase_user_id=str(uuid4())
     )
@@ -98,51 +152,156 @@ def create_user_and_agent(db: Session, prompt: str) -> tuple[User, Agent]:
         "schedule_message",
     ]
 
-    agent = Agent(
-        user_id=user.id,
-        name="Eforos",
-        prompt=prompt,
-        tools=common_tools,
+    safine_tools = common_tools + [
+        "get_current_time",
+        "get_hourly_weather",
+        "read_slate",
+        "update_slate",
+    ]
+
+    safine = Agent(
+        user_id=user.id, name="Safine", prompt=safine_prompt, tools=safine_tools
     )
-    db.add(agent)
+    db.add(safine)
+
+    if eforos_prompt is None:
+        try:
+            eforos_prompt = read_text_file("ai/default_prompts/eforos.md")
+        except Exception:
+            eforos_prompt = "You are Eforos."
+
+    eforos = Agent(
+        user_id=user.id, name="Eforos", prompt=eforos_prompt, tools=common_tools
+    )
+    db.add(eforos)
     db.commit()
 
-    sub = AgentSubscription(agent_id=agent.id, channel="raw_data_entries")
-    db.add(sub)
+    # Private channels
+    db.add_all(
+        [
+            AgentSubscription(agent_id=safine.id, channel="safine"),
+            AgentSubscription(agent_id=eforos.id, channel="eforos"),
+        ]
+    )
     db.commit()
 
-    return user, agent
+    # Create an initial Slate row for the user if needed (empty)
+    if not db.query(Slate).filter(Slate.user_id == user.id).first():
+        db.add(Slate(user_id=user.id, content=""))
+        db.commit()
+
+    return user, safine, eforos
+
+
+def seed_from_scenario(
+    db: Session, user: User, safine: Agent, eforos: Agent, scenario: dict[str, Any]
+) -> None:
+    """Seed notes, raw entries, and initial slate based on scenario."""
+    # Notes
+    for n in scenario.get("seed_notes", []) or []:
+        owner_name = (n.get("owner") or "Eforos").strip()
+        owner = eforos if owner_name.lower() == "eforos" else safine
+        db.add(
+            Note(
+                user_id=user.id,
+                owner=owner.id,
+                title=n.get("title", "Untitled"),
+                content=n.get("content", ""),
+                embedding=_zeros_vec(),
+            )
+        )
+    db.commit()
+
+    # Raw entries
+    for r in scenario.get("seed_raw_entries", []) or []:
+        db.add(
+            RawEntry(
+                user_id=user.id,
+                source=r.get("source", "unspecified"),
+                content=r.get("content", {}),
+                embedding=_zeros_vec(),
+            )
+        )
+    db.commit()
+
+    # Initial slate
+    initial_slate = scenario.get("initial_slate")
+    if initial_slate is not None:
+        slate = db.query(Slate).filter(Slate.user_id == user.id).first()
+        if slate:
+            slate.content = initial_slate
+        else:
+            db.add(Slate(user_id=user.id, content=initial_slate))
+        db.commit()
+
+
+# --------------------------
+# Prompt building
+# --------------------------
 
 
 def build_augmented_prompt(
-    agent_prompt: str, user_email: str, channel: str, message: str
+    agent_prompt: str,
+    user_email: str,
+    scenario: dict[str, Any],
+    message: Optional[str] = None,
 ) -> str:
-    user_info = (
-        f"\nYour user is {user_email}. The current time is {datetime.now().isoformat()}.\n"
-        f"You have tool-calling enabled. Do what you need to, then persist a clear note we can audit.\n"
+    now = datetime.now().isoformat()
+    header = (
+        f"\nYour user is {user_email}. The current time is {now}.\n"
+        f"You have tool-calling enabled. You can update the Living Slate with HTML and schedule future tasks.\n"
     )
-    message_info = (
-        f"\nChannel: {channel}\n"
-        f"Incoming message: {message}\n"
-        f"Sender: eval_runner\n"
-    )
-    return f"{agent_prompt}\n{user_info}{message_info}"
+
+    mode = scenario.get("mode", "incoming_message")
+
+    if mode == "incoming_message":
+        channel = scenario.get("channel", "safine")
+        sender = scenario.get("sender", "Eforos")
+        message_info = (
+            f"\nMode: incoming_message\n"
+            f"Channel: {channel}\n"
+            f"Sender: {sender}\n"
+            f"Incoming message: {message or scenario.get('message', '')}\n"
+        )
+        return f"{agent_prompt}\n{header}{message_info}"
+
+    elif mode == "self_scheduled":
+        at = scenario.get("run_context_time") or now
+        directive = scenario.get("brief_directive", "Prepare a concise morning brief.")
+        info = (
+            f"\nMode: self_scheduled\n"
+            f"It is {at}. You decided to prepare: {directive}\n"
+            f"Use the notes and recent raw entries as needed. Keep it tactful and concise.\n"
+        )
+        return f"{agent_prompt}\n{header}{info}"
+
+    else:
+        # Fallback to simple
+        return f"{agent_prompt}\n{header}\nIncoming message: {message or scenario.get('message', '')}\n"
+
+
+# --------------------------
+# Scenario execution
+# --------------------------
 
 
 async def run_scenario(db: Session, scenario: dict[str, Any]) -> dict[str, Any]:
-    # Load prompt by name/path/default
-    prompt_key, prompt_text = get_prompt_text(scenario)
+    prompt_key, safine_prompt = get_prompt_text(scenario)
 
-    user, agent = create_user_and_agent(db, prompt_text)
+    # Create user and agents
+    user, safine, eforos = create_user_and_agents(db, safine_prompt)
 
+    # Seed environment
+    seed_from_scenario(db, user, safine, eforos, scenario)
+
+    # Create agent instance bound to this DB session
     model = scenario.get("model") or os.getenv("GENKIT_MODEL")
     from ai.agent import get_user_ai_base
 
-    ai = get_user_ai_base(user.id, agent.name, model=model, db_session=db)
+    ai = get_user_ai_base(user.id, "Safine", model=model, db_session=db)
 
-    # Prepare a simple per-step message log in the output directory to verify processing coverage
+    # Setup output dir
     name = scenario.get("name") or f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-    # Run dir includes prompt key
     run_dir = OUT_DIR / name / prompt_key
     run_dir.mkdir(parents=True, exist_ok=True)
     step_log_path = run_dir / "steps.ndjson"
@@ -163,18 +322,17 @@ async def run_scenario(db: Session, scenario: dict[str, Any]) -> dict[str, Any]:
         except Exception:
             pass
 
+    augmented_prompt: Optional[str] = None
+
     messages_sequence = scenario.get("messages_sequence")
     if messages_sequence:
         for idx, msg in enumerate(messages_sequence):
             os.environ["EVAL_STEP_INDEX"] = str(idx)
             _log_step(str(idx), msg)
-            augmented_prompt = build_augmented_prompt(
-                agent_prompt=agent.prompt,
-                user_email=user.email,
-                channel=scenario.get("channel", "raw_data_entries"),
-                message=msg,
+            ap = build_augmented_prompt(
+                safine_prompt, user.email, scenario, message=msg
             )
-            # Retry with simple exponential backoff to handle transient Genkit/HTTP errors or rate limits
+            # backoff
             last_exc = None
             max_attempts = int(os.getenv("EVAL_MAX_ATTEMPTS", "3"))
             base_delay = float(os.getenv("EVAL_BASE_DELAY_SEC", "0.5"))
@@ -184,7 +342,7 @@ async def run_scenario(db: Session, scenario: dict[str, Any]) -> dict[str, Any]:
                         _log_step(str(idx), "DRY RUN: skipped model call")
                         last_exc = None
                         break
-                    await ai.generate(prompt=augmented_prompt, tools=agent.tools)
+                    await ai.generate(prompt=ap, tools=safine.tools)
                     last_exc = None
                     break
                 except Exception as e:
@@ -193,63 +351,39 @@ async def run_scenario(db: Session, scenario: dict[str, Any]) -> dict[str, Any]:
                         str(idx),
                         f"ERROR attempt {attempt+1}/{max_attempts}: {type(e).__name__}: {e}",
                     )
-                    import traceback as _tb
-
-                    cause = getattr(e, "__cause__", None)
-                    context = getattr(e, "__context__", None)
-                    with (run_dir / "errors.ndjson").open("a") as ef:
-                        ef.write(
-                            json.dumps(
-                                {
-                                    "timestamp": datetime.now().isoformat(),
-                                    "step": str(idx),
-                                    "attempt": attempt + 1,
-                                    "error": str(e),
-                                    "type": type(e).__name__,
-                                    "cause": repr(cause) if cause else None,
-                                    "context": repr(context) if context else None,
-                                    "model": model,
-                                    "traceback": _tb.format_exc(),
-                                }
-                            )
-                            + "\n"
-                        )
-                    # Backoff before retrying
                     await asyncio.sleep(base_delay * (2**attempt))
             if last_exc is not None:
-                # Give up on this step after retries
                 _log_step(str(idx), "FAILED after retries")
-            # Optional pacing to reduce chance of rate limiting
             await asyncio.sleep(
                 float(os.getenv("EVAL_STEP_DELAY_SEC", str(base_delay)))
             )
     else:
-        augmented_prompt = build_augmented_prompt(
-            agent_prompt=agent.prompt,
-            user_email=user.email,
-            channel=scenario.get("channel", "raw_data_entries"),
-            message=scenario.get("message", ""),
-        )
+        augmented_prompt = build_augmented_prompt(safine_prompt, user.email, scenario)
         _log_step("single", augmented_prompt)
         try:
             if os.getenv("EVAL_DRY_RUN") == "1":
                 _log_step("single", "DRY RUN: skipped model call")
             else:
-                await ai.generate(prompt=augmented_prompt, tools=agent.tools)
+                await ai.generate(prompt=augmented_prompt, tools=safine.tools)
         except Exception as e:
-            # Log exception details by step
-            err = {
-                "timestamp": datetime.now().isoformat(),
-                "step": os.getenv("EVAL_STEP_INDEX"),
-                "error": str(e),
-                "type": type(e).__name__,
-            }
             with (run_dir / "errors.ndjson").open("a") as ef:
-                ef.write(json.dumps(err) + "\n")
+                ef.write(
+                    json.dumps(
+                        {
+                            "timestamp": datetime.now().isoformat(),
+                            "step": os.getenv("EVAL_STEP_INDEX"),
+                            "error": str(e),
+                            "type": type(e).__name__,
+                        }
+                    )
+                    + "\n"
+                )
 
+    # Collect outputs
+    # Notes by Safine
     notes = (
         db.query(Note)
-        .filter(Note.user_id == user.id, Note.owner == agent.id)
+        .filter(Note.user_id == user.id, Note.owner == safine.id)
         .order_by(Note.created_at.asc())
         .all()
     )
@@ -263,37 +397,39 @@ async def run_scenario(db: Session, scenario: dict[str, Any]) -> dict[str, Any]:
         for n in notes
     ]
 
+    # Slate
+    slate = db.execute(select(Slate).where(Slate.user_id == user.id)).scalars().first()
+    slate_content = slate.content if slate else ""
+
+    # Chat messages by Safine (optional; may be empty if chat tools not used)
+    chat_msgs = (
+        db.query(ChatMessage, Conversation)
+        .join(Conversation, ChatMessage.conversation_id == Conversation.id)
+        .filter(ChatMessage.sender_agent_id == safine.id)
+        .order_by(ChatMessage.created_at.asc())
+        .all()
+    )
+    chat_dump = [
+        {
+            "at": m.created_at.isoformat() if m.created_at else None,
+            "content": m.content,
+            "conversation": c.name,
+        }
+        for (m, c) in chat_msgs
+    ]
+
     return {
         "scenario": scenario,
-        "prompt_used": prompt_text,
-        "augmented_prompt": augmented_prompt if not messages_sequence else None,
+        "prompt_used": safine_prompt,
+        "augmented_prompt": augmented_prompt,
         "notes": notes_dump,
+        "slate": slate_content,
+        "chat_messages": chat_dump,
         "timestamp": datetime.now().isoformat(),
     }
 
 
-def get_prompt_text(scenario: dict[str, Any]) -> tuple[str, str]:
-    # priority: scenario.prompt_name -> scenario.prompt_path -> default
-    prompt_name = scenario.get("prompt_name")
-    prompt_path = scenario.get("prompt_path")
-    if prompt_name:
-        # map to evals/prompts/<prompt_name>.md
-        path = OUT_DIR.parent / "prompts" / f"{prompt_name}.md"
-        if path.exists():
-            return prompt_name, path.read_text()
-        else:
-            # fallback to ai/default_prompts
-            fallback = Path("ai/default_prompts") / f"{prompt_name}.md"
-            if fallback.exists():
-                return prompt_name, fallback.read_text()
-    if prompt_path:
-        return Path(prompt_path).stem, read_text_file(prompt_path)
-    # default minimal prompt
-    return "initial_test_eforos", read_text_file("evals/prompts/initial_test_eforos.md")
-
-
 def save_result(name: str, prompt_key: str, result: dict[str, Any]) -> None:
-    # Organize as out/<scenario_name>/<prompt_key>/
     run_dir = OUT_DIR / name / prompt_key
     run_dir.mkdir(parents=True, exist_ok=True)
 
@@ -304,13 +440,20 @@ def save_result(name: str, prompt_key: str, result: dict[str, Any]) -> None:
             indent=2,
         )
 
-    # Save prompt only for single-message scenarios
     if result.get("augmented_prompt") is not None:
         with (run_dir / "prompt.txt").open("w") as f:
-            f.write(result["augmented_prompt"])
+            f.write(result["augmented_prompt"])  # type: ignore[arg-type]
 
     with (run_dir / "notes.json").open("w") as f:
         json.dump(result["notes"], f, indent=2)
+
+    # slate.html
+    with (run_dir / "slate.html").open("w") as f:
+        f.write(result.get("slate", ""))
+
+    # chat messages
+    with (run_dir / "chat_messages.json").open("w") as f:
+        json.dump(result.get("chat_messages", []), f, indent=2)
 
     # Copy tool call log if present
     log_path = os.getenv("EVAL_TOOL_LOG_PATH")
@@ -319,10 +462,7 @@ def save_result(name: str, prompt_key: str, result: dict[str, Any]) -> None:
         dst = run_dir / "tool_calls.ndjson"
         if src.resolve() != dst.resolve():
             dst.write_text(src.read_text())
-        else:
-            # already at destination, do nothing
-            pass
-        # Clean up tmp tool log if it has our tmp prefix
+        # Clean up tmp tool log if created with tmp prefix
         if src.name.startswith("tmp_rovodev_") and src.exists():
             try:
                 src.unlink()
@@ -330,18 +470,22 @@ def save_result(name: str, prompt_key: str, result: dict[str, Any]) -> None:
                 pass
 
 
+# --------------------------
+# CLI
+# --------------------------
+
+
 @click.group()
 def cli() -> None:
-    """Eforos evals CLI"""
+    """Safine evals CLI"""
     pass
 
 
 @cli.command(name="list")
 def list_cmd() -> None:
-    """List available scenarios."""
     ensure_out_dir()
     scenarios = load_scenarios()
-    click.echo("Available scenarios:")
+    click.echo("Available Safine scenarios:")
     for sc in scenarios:
         click.echo(f"- {sc.get('name')}")
 
@@ -349,9 +493,7 @@ def list_cmd() -> None:
 @cli.command(name="run")
 @click.option("--name", "selected_name", help="Run only this scenario by name.")
 @click.option(
-    "--model",
-    default=None,
-    help="Override model id for the run (fallback to GENKIT_MODEL).",
+    "--model", default=None, help="Override model id (fallback to GENKIT_MODEL)."
 )
 @click.option(
     "--prompt",
@@ -391,19 +533,18 @@ def list_cmd() -> None:
     help="Do not call the model; only write prompts/logs.",
 )
 def run_cmd(
-    selected_name: str | None,
-    model: str | None,
-    prompt_name: str | None,
-    step_delay: float | None,
-    max_attempts: int | None,
-    base_delay: float | None,
-    gen_timeout: float | None,
+    selected_name: Optional[str],
+    model: Optional[str],
+    prompt_name: Optional[str],
+    step_delay: Optional[float],
+    max_attempts: Optional[int],
+    base_delay: Optional[float],
+    gen_timeout: Optional[float],
     dry_run: bool,
 ) -> None:
-    """Run scenarios. By default, runs all discovered scenarios."""
     ensure_out_dir()
 
-    # Environment overrides for runtime behavior
+    # Env overrides
     if model:
         os.environ["GENKIT_MODEL"] = model
     if step_delay is not None:
@@ -419,25 +560,22 @@ def run_cmd(
 
     scenarios = load_scenarios()
 
-    # Optional prompt override: apply to each scenario
     if prompt_name:
         for sc in scenarios:
             sc["prompt_name"] = prompt_name
 
-    # Filter by name if provided (fallback to env var EVAL_SCENARIO for backward compatibility)
-    selected_name = selected_name or os.getenv("EVAL_SCENARIO")
     if selected_name:
         scenarios = [s for s in scenarios if s.get("name") == selected_name]
         if not scenarios:
             click.echo(f"No scenario found with name '{selected_name}'.", err=True)
             raise SystemExit(1)
 
+    # Ephemeral DB
     with testing.postgresql.Postgresql() as postgresql:
         url = postgresql.url()
         os.environ["TESTING"] = "1"
         os.environ["DATABASE_URL"] = url
 
-        # Use NullPool to avoid pool cleanup rollback calls during ephemeral DB shutdown
         engine = create_engine(
             url.replace("postgresql://", "postgresql+psycopg://"),
             poolclass=NullPool,
@@ -455,18 +593,18 @@ def run_cmd(
 
         SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
         db = SessionLocal()
+
         for scenario in scenarios:
             name = (
                 scenario.get("name")
                 or f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
             )
-            # Set per-run tool log file under <scenario>/<prompt>
             prompt_key, _ = get_prompt_text(scenario)
+
+            # Configure tool call log path per scenario
             tool_log = OUT_DIR / name / prompt_key / "tool_calls.ndjson"
             os.environ["EVAL_TOOL_LOG_PATH"] = str(tool_log)
-            # Ensure parent dirs exist for the log
             (OUT_DIR / name / prompt_key).mkdir(parents=True, exist_ok=True)
-            # Clear any existing log file
             if tool_log.exists():
                 tool_log.unlink()
 

@@ -1,0 +1,27 @@
+{
+  "name": "safine_morning_brief_simple",
+  "model": "gemini-2.5-flash",
+  "prompt_name": "safine",
+  "mode": "self_scheduled",
+  "run_context_time": "2025-08-15T07:30:00",
+  "brief_directive": "Generate a Morning Launchpad with weather, calendar highlights, and a single focus for today.",
+  "seed_notes": [
+    {
+      "title": "Active Narratives",
+      "content": "Project Omega design review this afternoon; wellness flag mid-week.",
+      "owner": "Eforos"
+    }
+  ],
+  "seed_raw_entries": [
+    {
+      "source": "calendar",
+      "content": {
+        "title": "Design Review",
+        "time": "2025-08-15 14:30",
+        "location": "Zoom",
+        "notes": "Review v2 mocks and assign action items."
+      }
+    }
+  ],
+  "initial_slate": "<div>Good morning</div>"
+}

@@ -82,3 +82,7 @@ Outputs are written under evals/out/<scenario_name> including config.json, promp
 ## Architecture
 
 The service is designed to be independent but communicates with the everlight-api service for CRUD operations and shares the same database for agent-specific data.
+
+## Deploy
+
+gcloud run deploy everlight-agents --source .

@@ -1,0 +1,17 @@
+{
+  "name": "safine_trip_update_from_eforos",
+  "model": "gemini-2.5-flash",
+  "prompt_name": "safine",
+  "mode": "incoming_message",
+  "channel": "safine",
+  "sender": "Eforos",
+  "message": "Trip details: Flight Oct 3 at 9:30am out of SFO. Hotel: The Grove, confirmation #ABC123. Let's plan dinners too.",
+  "seed_notes": [
+    {
+      "title": "Travel: October Trip Overview",
+      "content": "Context compiled by Eforos — itinerary, bookings, and a note to consider dinner reservations near The Grove.",
+      "owner": "Eforos"
+    }
+  ],
+  "initial_slate": "<div>Welcome back</div>"
+}
