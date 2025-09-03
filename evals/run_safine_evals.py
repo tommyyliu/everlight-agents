@@ -26,7 +26,6 @@ from db.models import (
     AgentSubscription,
     Note,
     RawEntry,
-    Slate,
     ChatMessage,
     Conversation,
 )
@@ -155,8 +154,6 @@ def create_user_and_agents(
     safine_tools = common_tools + [
         "get_current_time",
         "get_hourly_weather",
-        "read_slate",
-        "update_slate",
     ]
 
     safine = Agent(
@@ -185,10 +182,6 @@ def create_user_and_agents(
     )
     db.commit()
 
-    # Create an initial Slate row for the user if needed (empty)
-    if not db.query(Slate).filter(Slate.user_id == user.id).first():
-        db.add(Slate(user_id=user.id, content=""))
-        db.commit()
 
     return user, safine, eforos
 
@@ -196,7 +189,7 @@ def create_user_and_agents(
 def seed_from_scenario(
     db: Session, user: User, safine: Agent, eforos: Agent, scenario: dict[str, Any]
 ) -> None:
-    """Seed notes, raw entries, and initial slate based on scenario."""
+    """Seed notes and raw entries based on scenario."""
     # Notes
     for n in scenario.get("seed_notes", []) or []:
         owner_name = (n.get("owner") or "Eforos").strip()
@@ -224,15 +217,6 @@ def seed_from_scenario(
         )
     db.commit()
 
-    # Initial slate
-    initial_slate = scenario.get("initial_slate")
-    if initial_slate is not None:
-        slate = db.query(Slate).filter(Slate.user_id == user.id).first()
-        if slate:
-            slate.content = initial_slate
-        else:
-            db.add(Slate(user_id=user.id, content=initial_slate))
-        db.commit()
 
 
 # --------------------------
@@ -249,7 +233,7 @@ def build_augmented_prompt(
     now = datetime.now().isoformat()
     header = (
         f"\nYour user is {user_email}. The current time is {now}.\n"
-        f"You have tool-calling enabled. You can update the Living Slate with HTML and schedule future tasks.\n"
+        f"You have tool-calling enabled. You can create and schedule future tasks.\n"
     )
 
     mode = scenario.get("mode", "incoming_message")
@@ -397,9 +381,6 @@ async def run_scenario(db: Session, scenario: dict[str, Any]) -> dict[str, Any]:
         for n in notes
     ]
 
-    # Slate
-    slate = db.execute(select(Slate).where(Slate.user_id == user.id)).scalars().first()
-    slate_content = slate.content if slate else ""
 
     # Chat messages by Safine (optional; may be empty if chat tools not used)
     chat_msgs = (
@@ -423,7 +404,6 @@ async def run_scenario(db: Session, scenario: dict[str, Any]) -> dict[str, Any]:
         "prompt_used": safine_prompt,
         "augmented_prompt": augmented_prompt,
         "notes": notes_dump,
-        "slate": slate_content,
         "chat_messages": chat_dump,
         "timestamp": datetime.now().isoformat(),
     }
@@ -447,9 +427,6 @@ def save_result(name: str, prompt_key: str, result: dict[str, Any]) -> None:
     with (run_dir / "notes.json").open("w") as f:
         json.dump(result["notes"], f, indent=2)
 
-    # slate.html
-    with (run_dir / "slate.html").open("w") as f:
-        f.write(result.get("slate", ""))
 
     # chat messages
     with (run_dir / "chat_messages.json").open("w") as f:

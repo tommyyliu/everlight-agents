@@ -19,7 +19,7 @@ from pgvector.psycopg import register_vector
 from sqlalchemy import event
 
 from ai.tools import AgentContext
-from db.models import Base, User, Agent, Slate, Note, RawEntry
+from db.models import Base, User, Agent, Note, RawEntry
 
 
 # Use a different database for each test worker if running in parallel
@@ -134,12 +134,6 @@ def run_context(agent_context):
     return context
 
 
-@pytest.fixture
-def mock_get_db_session(db_session):
-    """Mock get_db_session to return our test database session"""
-    with patch("ai.tools.slate.get_db_session") as mock_func:
-        mock_func.return_value.__next__ = Mock(return_value=db_session)
-        yield mock_func
 
 
 @pytest.fixture
@@ -173,7 +167,6 @@ def mock_logfire():
 
     # Patch all the modules that import logfire
     patches = [
-        patch("ai.tools.slate.logfire", mock),
         patch("ai.tools.notes.logfire", mock),
         patch("ai.tools.data.logfire", mock),
         patch("ai.tools.utilities.logfire", mock),
@@ -194,7 +187,6 @@ def mock_log_tool_call():
     mock = Mock()
 
     patches = [
-        patch("ai.tools.slate.log_tool_call", mock),
         patch("ai.tools.notes.log_tool_call", mock),
         patch("ai.tools.data.log_tool_call", mock),
         patch("ai.tools.utilities.log_tool_call", mock),
@@ -243,15 +235,6 @@ def mock_embed_query():
         yield CombinedMock(data_mock, notes_mock)
 
 
-@pytest.fixture
-def test_slate(db_session, test_user):
-    """Create a test slate in the database"""
-    slate = Slate(
-        user_id=test_user.id, content="Test slate content for testing purposes"
-    )
-    db_session.add(slate)
-    db_session.commit()
-    return slate
 
 
 @pytest.fixture
