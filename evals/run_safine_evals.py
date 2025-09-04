@@ -11,7 +11,7 @@ import numpy as np
 import testing.postgresql
 from dotenv import load_dotenv
 from pgvector.psycopg import register_vector
-from sqlalchemy import create_engine, text, select, event
+from sqlalchemy import create_engine, text, event
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import NullPool
 from uuid import uuid4

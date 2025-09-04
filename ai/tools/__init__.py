@@ -4,6 +4,7 @@ AI tools organized by category with shared components.
 
 from .communication import send_message_tool, schedule_message
 from .core import AgentContext, log_tool_call
+from .brief import list_user_briefs, create_brief
 from .notes import create_note, update_note, search_notes, get_note_titles
 from .data import search_raw_entries, get_recent_raw_entries
 from .utilities import get_current_time, get_hourly_weather
@@ -23,6 +24,9 @@ __all__ = [
     # Communication tools
     "send_message_tool",
     "schedule_message",
+    # Brief tools
+    "list_user_briefs",
+    "create_brief",
     # Note tools
     "create_note",
     "update_note",

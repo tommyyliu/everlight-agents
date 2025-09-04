@@ -61,7 +61,7 @@ def create_default_agents_for_user(db: Session, user: User):
         prompt=_read_prompt_file("safine"),
         # Safine needs to manage her own state and get context
         tools=common_tools
-        + ["get_current_time", "get_hourly_weather"],
+        + ["get_current_time", "get_hourly_weather", "list_user_briefs", "create_brief"],
     )
 
     # Add the agents to the session
