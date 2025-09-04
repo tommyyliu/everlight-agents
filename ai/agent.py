@@ -12,8 +12,6 @@ from uuid import UUID
 from ai.tools import (
     AgentContext,
     send_message_tool,
-    read_slate,
-    update_slate,
     get_current_time,
     get_hourly_weather,
     create_note,
@@ -40,8 +38,6 @@ class ToolRegistry:
         self._tools.update(
             {
                 "send_message_tool": send_message_tool,
-                "read_slate": read_slate,
-                "update_slate": update_slate,
                 "get_current_time": get_current_time,
                 "get_hourly_weather": get_hourly_weather,
                 "create_note": create_note,
